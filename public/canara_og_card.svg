@@ -1,0 +1,57 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 630" width="1200" height="630">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#002D62"/>
+      <stop offset="50%" stop-color="#00529B"/>
+      <stop offset="100%" stop-color="#001838"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Background -->
+  <rect width="1200" height="630" fill="url(#bg)"/>
+
+  <!-- Golden bottom decorative accent bar -->
+  <rect y="614" width="1200" height="16" fill="#FFB703"/>
+
+  <!-- Logo Group -->
+  <g transform="translate(100, 100)">
+    <!-- Shield Logo Box -->
+    <rect width="140" height="140" rx="28" fill="#0070BA"/>
+    <path d="M30 100L70 30L110 100H30Z" fill="#003875"/>
+    <path d="M42 44L82 114L122 44H42Z" fill="#FFB703"/>
+    <path d="M70 56L91 93H49L70 56Z" fill="#FFFFFF"/>
+    <polygon points="70,40 96,84 44,84" fill="#0070BA"/>
+    <path d="M70 49L84 75H56L70 49Z" fill="#FB8500"/>
+  </g>
+
+  <!-- Brand Typography -->
+  <g transform="translate(270, 140)">
+    <text font-family="'Noto Sans Devanagari', 'Segoe UI', Arial, sans-serif" font-weight="900" font-size="64" fill="#FFFFFF">
+      केनरा बैंक
+    </text>
+    <text font-family="'Segoe UI', Roboto, Helvetica, sans-serif" font-weight="800" font-size="58" fill="#FFB703" x="290">
+      Canara Bank
+    </text>
+    <text y="50" font-family="'Segoe UI', Arial, sans-serif" font-weight="600" font-size="20" fill="#90CAF9" letter-spacing="1">
+      भारत सरकार का उपक्रम • A GOVT. OF INDIA UNDERTAKING
+    </text>
+    <rect x="580" y="32" width="160" height="26" rx="6" fill="#FFB703"/>
+    <text x="590" y="50" font-family="'Segoe UI', Arial, sans-serif" font-weight="900" font-size="14" fill="#002D62">
+      सिंडिकेट SYNDICATE
+    </text>
+  </g>
+
+  <!-- Main Portal Banner Box -->
+  <g transform="translate(100, 300)">
+    <rect width="1000" height="230" rx="20" fill="#FFFFFF" fill-opacity="0.08" stroke="#90CAF9" stroke-opacity="0.25" stroke-width="2"/>
+    <text x="50" y="70" font-family="'Noto Sans Devanagari', 'Segoe UI', Arial, sans-serif" font-weight="900" font-size="44" fill="#FFD166">
+      राजभाषा तिमाही रिपोर्ट एवं प्रबंधन पोर्टल
+    </text>
+    <text x="50" y="125" font-family="'Segoe UI', Arial, sans-serif" font-weight="600" font-size="26" fill="#FFFFFF">
+      Official Language Quarterly Reporting &amp; Management Information System
+    </text>
+    <text x="50" y="175" font-family="'Noto Sans Devanagari', Arial, sans-serif" font-weight="400" font-size="21" fill="#E2E8F0">
+      क्षेत्रीय कार्यालय (RO) • अंचल कार्यालय (CO) • प्रधान कार्यालय (HO) • अनुवाद व शाखा भ्रमण ट्रैकिंग
+    </text>
+  </g>
+</svg>

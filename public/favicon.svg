@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" width="120" height="120">
+  <!-- Canara Bank Blue Rounded Base -->
+  <rect width="120" height="120" rx="24" fill="#0070BA"/>
+  <!-- Interlocking Deep Blue Triangle -->
+  <path d="M26 86L60 26L94 86H26Z" fill="#00529B"/>
+  <!-- Interlocking Bright Gold Triangle -->
+  <path d="M36 38L70 98L104 38H36Z" fill="#FFB703"/>
+  <!-- White Intersection Diamond Highlight -->
+  <path d="M60 48L78 80H42L60 48Z" fill="#FFFFFF" opacity="0.95"/>
+  <polygon points="60,34 82,72 38,72" fill="#0070BA"/>
+  <path d="M60 42L72 64H48L60 42Z" fill="#FB8500"/>
+</svg>
