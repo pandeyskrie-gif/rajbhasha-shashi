@@ -21,7 +21,9 @@ import {
   CheckCircle2,
   FileCheck2,
   Clock,
-  History
+  History,
+  Sparkles,
+  Layers
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { exportHeadOfficeMasterToExcel } from '../utils/excelExport';
@@ -49,7 +51,7 @@ export const HeadOfficePortal: React.FC<Props> = ({
   transferHistory,
   onExecuteTransfer,
 }) => {
-  const [activeHoTab, setActiveHoTab] = useState<'dashboard' | 'transfer' | 'translation' | 'visits'>('dashboard');
+  const [activeHoTab, setActiveHoTab] = useState<'dashboard' | 'transfer' | 'translation' | 'visits' | 'publications_tolic'>('dashboard');
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<'all' | 'submitted' | 'pending'>('all');
 
@@ -269,6 +271,18 @@ export const HeadOfficePortal: React.FC<Props> = ({
           >
             <MapPin className="w-4 h-4" />
             <span>४. शाखा निरीक्षण समेकन ({totalBranchVisits} विज़िट)</span>
+          </button>
+
+          <button
+            onClick={() => setActiveHoTab('publications_tolic')}
+            className={`px-4 py-2 rounded-lg transition whitespace-nowrap cursor-pointer flex items-center gap-1.5 ${
+              activeHoTab === 'publications_tolic'
+                ? 'bg-amber-400 text-blue-950 shadow-md'
+                : 'text-blue-100 hover:bg-blue-800'
+            }`}
+          >
+            <BookOpen className="w-4 h-4" />
+            <span>५. पत्रिकाएं, नराकास, नवोन्मेषी कार्य व पुरस्कार (तालिका 10-15)</span>
           </button>
         </div>
       </div>
@@ -871,6 +885,229 @@ export const HeadOfficePortal: React.FC<Props> = ({
                 )}
               </div>
             ))}
+          </div>
+        </div>
+      )}
+
+      {/* Tab 5: Publications, TOLIC, Innovative Works & Awards */}
+      {activeHoTab === 'publications_tolic' && (
+        <div className="space-y-6">
+          <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-3">
+            <div>
+              <h3 className="text-sm font-bold text-slate-900">
+                अखिल भारतीय पत्रिकाएं, केनराज्योति, नराकास (TOLIC), नवोन्मेषी कार्य एवं पुरस्कार समेकन
+              </h3>
+              <p className="text-xs text-slate-500">
+                तालिका 10, 11, 12, 13 तथा भाग 14 व 15 का अखिल भारतीय केंद्रीय दृश्य
+              </p>
+            </div>
+            <button
+              onClick={() => exportHeadOfficeMasterToExcel(quarterReports, officers)}
+              className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-bold inline-flex items-center gap-1.5 transition shadow-sm cursor-pointer self-start md:self-auto"
+            >
+              <FileSpreadsheet className="w-3.5 h-3.5" />
+              <span>प्रकाशन व नराकास एक्सेल एक्सपोर्ट</span>
+            </button>
+          </div>
+
+          {/* Quick Metrics */}
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+            <div className="bg-white p-3 rounded-xl border border-indigo-200">
+              <span className="text-[11px] font-semibold text-slate-500">कुल विमोचित पत्रिकाएं (छमाही)</span>
+              <div className="text-2xl font-black text-indigo-900 mt-1">
+                {quarterReports.reduce((sum, r) => sum + r.magazines.length, 0)}
+              </div>
+            </div>
+            <div className="bg-white p-3 rounded-xl border border-amber-200">
+              <span className="text-[11px] font-semibold text-slate-500">नराकास संयोजक कार्यालय (TOLIC)</span>
+              <div className="text-2xl font-black text-amber-900 mt-1">
+                {quarterReports.reduce((sum, r) => sum + r.tolicConveners.length, 0)}
+              </div>
+            </div>
+            <div className="bg-white p-3 rounded-xl border border-teal-200">
+              <span className="text-[11px] font-semibold text-slate-500">नवोन्मेषी कार्य प्रविष्टियां</span>
+              <div className="text-2xl font-black text-teal-900 mt-1">
+                {quarterReports.reduce((sum, r) => sum + r.innovativeWorks.length, 0)}
+              </div>
+            </div>
+            <div className="bg-white p-3 rounded-xl border border-amber-300">
+              <span className="text-[11px] font-semibold text-slate-500">प्राप्त विशेष पुरस्कार</span>
+              <div className="text-2xl font-black text-amber-950 mt-1">
+                {quarterReports.reduce((sum, r) => sum + r.specialAwards.length, 0)}
+              </div>
+            </div>
+          </div>
+
+          {/* Detailed All-India Table */}
+          <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+            <div className="overflow-x-auto">
+              <table className="w-full text-xs text-left border-collapse min-w-[1100px]">
+                <thead className="bg-slate-100 text-slate-800 uppercase tracking-wider text-[11px] font-bold border-b border-slate-300">
+                  <tr>
+                    <th className="p-3 w-10 text-center">क्र.</th>
+                    <th className="p-3 min-w-[180px]">अंचल व कार्यालय</th>
+                    <th className="p-3 min-w-[150px]">राजभाषा अधिकारी</th>
+                    <th className="p-3 min-w-[210px] bg-indigo-50/60 text-indigo-950 border-x border-slate-200">
+                      हिंदी में जारी पत्रिका/ई पत्रिका/बुलेटिन(छमाही)
+                    </th>
+                    <th className="p-3 min-w-[210px] bg-indigo-50/60 text-indigo-950 border-r border-slate-200">
+                      केनराज्योति व श्रेयस पत्रिकाओं के लिए प्रविष्टियां(तिमाही)
+                    </th>
+                    <th className="p-3 min-w-[210px] bg-amber-50/60 text-amber-950 border-r border-slate-200">
+                      नगर राजभाषा कार्यान्वयन समिति(जहां बैंक सदस्य है)
+                    </th>
+                    <th className="p-3 min-w-[220px] bg-purple-50/60 text-purple-950 border-r border-slate-200">
+                      नगर राजभाषा कार्यान्वयन समिति(जहां बैंक संयोजक है)
+                    </th>
+                    <th className="p-3 min-w-[210px] bg-teal-50/60 text-teal-950 border-r border-slate-200">
+                      अंचल व क्षेत्रीय कार्यालयों द्वारा तिमाही के दौरान किए गए नवोन्मेषी कार्य :
+                    </th>
+                    <th className="p-3 min-w-[210px] bg-amber-50/60 text-amber-950 border-r border-slate-200">
+                      अंचल व क्षेत्रीय कार्यालयों को प्राप्त विशेष पुरस्कार :
+                    </th>
+                    <th className="p-3 w-24 text-center">कार्रवाई</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-200">
+                  {quarterReports.map((rep, idx) => (
+                    <tr key={rep.id} className="hover:bg-slate-50 transition">
+                      <td className="p-3 text-center font-bold text-slate-400">{idx + 1}.</td>
+                      <td className="p-3">
+                        <div className="font-bold text-slate-900">{rep.primaryOfficeName}</div>
+                        <div className="text-[11px] text-slate-500">{rep.circleOfficeName}</div>
+                      </td>
+                      <td className="p-3">
+                        <div className="font-semibold text-slate-800">{rep.officerName}</div>
+                        <div className="text-[10px] text-slate-500 font-mono">{rep.officerStaffNo}</div>
+                      </td>
+
+                      {/* 1. हिंदी पत्रिका */}
+                      <td className="p-3 bg-indigo-50/20 border-x border-slate-200">
+                        {rep.magazines.length > 0 ? (
+                          <div className="space-y-1">
+                            {rep.magazines.map((m, mIdx) => (
+                              <div key={mIdx} className="bg-white p-1.5 rounded border border-indigo-100 text-[11px]">
+                                <div className="font-bold text-indigo-950">{m.magazineName}</div>
+                                <div className="text-[10px] text-slate-600">
+                                  पृष्ठ: <strong>{m.totalPages}</strong> | विमोचन: <strong>{m.releaseDate || '-'}</strong>
+                                </div>
+                                <div className="text-[10px] text-slate-500">
+                                  HO प्रेषण: <strong>{m.hoSentDate || '-'}</strong>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        ) : (
+                          <span className="text-slate-400 italic">निरंक</span>
+                        )}
+                      </td>
+
+                      {/* 2. केनराज्योति व श्रेयस */}
+                      <td className="p-3 bg-indigo-50/20 border-r border-slate-200">
+                        {rep.houseJournals.length > 0 ? (
+                          <div className="space-y-1">
+                            {rep.houseJournals.map((hj, hIdx) => (
+                              <div key={hIdx} className="bg-white p-1.5 rounded border border-indigo-100 text-[11px]">
+                                <div className="text-slate-700">
+                                  प्रविष्टियां: <strong className="text-indigo-900">{hj.staffEntriesSentDate || '-'}</strong>
+                                </div>
+                                <div className="text-slate-700">
+                                  गतिविधि: <strong className="text-indigo-900">{hj.activityReportSentDate || '-'}</strong>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        ) : (
+                          <span className="text-slate-400 italic">निरंक</span>
+                        )}
+                      </td>
+
+                      {/* 3. नराकास सदस्य */}
+                      <td className="p-3 bg-amber-50/20 border-r border-slate-200">
+                        {rep.tolicMembers.length > 0 ? (
+                          <div className="space-y-1">
+                            {rep.tolicMembers.map((tm, tIdx) => (
+                              <div key={tIdx} className="bg-white p-1.5 rounded border border-amber-200 text-[11px]">
+                                <div className="font-bold text-amber-950">{tm.tolicName}</div>
+                                <div className="text-[10px] text-slate-600">
+                                  छमाही रिपोर्ट: <strong>{tm.halfYearlyReportDate || '-'}</strong> | बैठक: <strong>{tm.meetingDate || '-'}</strong>
+                                </div>
+                                <div className="text-[10px] text-slate-500">उपस्थित: <strong>{tm.headAttendedName || '-'}</strong></div>
+                              </div>
+                            ))}
+                          </div>
+                        ) : (
+                          <span className="text-slate-400 italic">सदस्य नहीं</span>
+                        )}
+                      </td>
+
+                      {/* 4. नराकास संयोजक */}
+                      <td className="p-3 bg-purple-50/20 border-r border-slate-200">
+                        {rep.tolicConveners.length > 0 ? (
+                          <div className="space-y-1">
+                            {rep.tolicConveners.map((tc, cIdx) => (
+                              <div key={cIdx} className="bg-white p-1.5 rounded border border-purple-200 text-[11px]">
+                                <div className="font-bold text-purple-950">{tc.tolicName}</div>
+                                <div className="text-[10px] text-slate-600">
+                                  माह: <strong>{tc.targetCalendarMonth || '-'}</strong> | बैठक: <strong>{tc.meetingDate || '-'}</strong>
+                                </div>
+                                <div className="text-[10px] font-bold text-emerald-800">
+                                  उपस्थित/कुल: {tc.attendedMemberOffices || 0} / {tc.totalMemberOffices || 0}
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        ) : (
+                          <span className="text-slate-400 italic">संयोजक नहीं</span>
+                        )}
+                      </td>
+
+                      {/* 5. नवोन्मेषी कार्य */}
+                      <td className="p-3 bg-teal-50/20 border-r border-slate-200">
+                        {rep.innovativeWorks.length > 0 ? (
+                          <div className="space-y-1">
+                            <span className="inline-block bg-teal-100 text-teal-900 border border-teal-300 px-1.5 py-0.5 rounded text-[10px] font-bold">
+                              {rep.innovativeWorks.length} कार्य दर्ज
+                            </span>
+                            <p className="text-[11px] text-slate-800 line-clamp-2" title={rep.innovativeWorks.join(' | ')}>
+                              {rep.innovativeWorks[0]}
+                            </p>
+                          </div>
+                        ) : (
+                          <span className="text-slate-400 italic">कोई नहीं</span>
+                        )}
+                      </td>
+
+                      {/* 6. विशेष पुरस्कार */}
+                      <td className="p-3 bg-amber-50/20 border-r border-slate-200">
+                        {rep.specialAwards.length > 0 ? (
+                          <div className="space-y-1">
+                            <span className="inline-block bg-amber-100 text-amber-950 border border-amber-300 px-1.5 py-0.5 rounded text-[10px] font-bold">
+                              {rep.specialAwards.length} पुरस्कार दर्ज
+                            </span>
+                            <p className="text-[11px] text-slate-800 line-clamp-2" title={rep.specialAwards.join(' | ')}>
+                              {rep.specialAwards[0]}
+                            </p>
+                          </div>
+                        ) : (
+                          <span className="text-slate-400 italic">कोई नहीं</span>
+                        )}
+                      </td>
+
+                      <td className="p-3 text-center">
+                        <button
+                          onClick={() => onViewPrintable(rep)}
+                          className="px-2.5 py-1 bg-blue-50 hover:bg-blue-100 text-blue-800 rounded font-bold text-[11px] inline-flex items-center gap-1 cursor-pointer"
+                        >
+                          <Eye className="w-3.5 h-3.5" />
+                          <span>देखें</span>
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           </div>
         </div>
       )}

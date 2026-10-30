@@ -48,33 +48,13 @@ export default function App() {
   const [allOffices] = useState<Office[]>(REGIONAL_OFFICES);
   const [circleOffices] = useState<{ code: string; name: string }[]>(CIRCLE_OFFICES);
 
-  // Authentication Session
+  // Authentication Session - strictly requires login on every new load/shared link.
+  // Never restore last-opened officer automatically so every opener sees the login page and chooses their name.
   const [currentUser, setCurrentUser] = useState<AuthUser | null>(() => {
-    const saved = localStorage.getItem('cb_rajbhasha_auth_user_v2');
-    if (saved) {
-      try {
-        return JSON.parse(saved);
-      } catch (e) {
-        return null;
-      }
-    }
-    // If user opened with direct staffNo in query params, or default to initial demo user
-    if (initialStaffNo) {
-      const match = INITIAL_OFFICERS.find((o) => o.staffNo === initialStaffNo);
-      if (match) {
-        return {
-          role: 'officer',
-          staffNo: match.staffNo,
-          name: match.name,
-          designation: match.designation,
-          officeName: match.primaryOfficeName,
-          dpCode: '6974',
-          circleOfficeCode: match.circleOfficeCode,
-          circleOfficeName: match.circleOfficeName,
-          concurrentOffices: match.concurrentOffices,
-        };
-      }
-    }
+    try {
+      localStorage.removeItem('cb_rajbhasha_auth_user_v2');
+      localStorage.removeItem('cb_rajbhasha_auth_user');
+    } catch (e) {}
     return null;
   });
 
@@ -118,15 +98,19 @@ export default function App() {
   };
 
   const [currentOfficer, setCurrentOfficer] = useState<Officer | null>(() => {
-    if (currentUser && currentUser.role === 'officer') {
-      const match = officers.find((o) => o.staffNo === currentUser.staffNo);
-      if (match) return match;
+    if (currentUser) {
+      if (currentUser.role === 'officer') {
+        const match = officers.find((o) => o.staffNo === currentUser.staffNo);
+        if (match) return match;
+      } else if (currentUser.role === 'co') {
+        const coOff =
+          officers.find((o) => o.staffNo === currentUser.staffNo) ||
+          officers.find((o) => o.circleOfficeCode === currentUser.circleOfficeCode && o.primaryOfficeType === 'CO') ||
+          officers.find((o) => o.circleOfficeCode === currentUser.circleOfficeCode);
+        if (coOff) return coOff;
+      }
     }
-    if (initialStaffNo) {
-      const found = officers.find((o) => o.staffNo === initialStaffNo);
-      if (found) return found;
-    }
-    return officers[0] || null;
+    return null;
   });
 
   // State for printable full-screen report view
@@ -161,11 +145,12 @@ export default function App() {
     localStorage.setItem('cb_rajbhasha_transfers_v2', JSON.stringify(transferHistory));
   }, [transferHistory]);
 
+  // Auth session is memory/active session based so fresh link opens always show Login Screen
   useEffect(() => {
-    if (currentUser) {
-      localStorage.setItem('cb_rajbhasha_auth_user_v2', JSON.stringify(currentUser));
-    } else {
-      localStorage.removeItem('cb_rajbhasha_auth_user_v2');
+    if (!currentUser) {
+      try {
+        localStorage.removeItem('cb_rajbhasha_auth_user_v2');
+      } catch (e) {}
     }
   }, [currentUser]);
 
@@ -179,11 +164,18 @@ export default function App() {
       if (off) setCurrentOfficer(off);
     } else if (user.role === 'co') {
       setSelectedCircleCode(user.circleOfficeCode);
+      const coOff =
+        officers.find((o) => o.staffNo === user.staffNo) ||
+        officers.find((o) => o.circleOfficeCode === user.circleOfficeCode && o.primaryOfficeType === 'CO') ||
+        officers.find((o) => o.circleOfficeCode === user.circleOfficeCode);
+      if (coOff) setCurrentOfficer(coOff);
     }
   };
 
   const handleLogout = () => {
     setCurrentUser(null);
+    setCurrentOfficer(null);
+    localStorage.removeItem('cb_rajbhasha_auth_user_v2');
   };
 
   // Execute Officer Transfer from HO
@@ -367,6 +359,7 @@ export default function App() {
       <LoginScreen
         officers={officers}
         onLoginSuccess={handleLoginSuccess}
+        initialLoginId={initialStaffNo || ''}
       />
     );
   }
@@ -422,6 +415,8 @@ export default function App() {
             onViewPrintable={(rep) => setViewingPrintableReport(rep)}
             onAddNewOfficerModal={() => setShowAddOfficerModal(true)}
             currentUser={currentUser}
+            onLogout={handleLogout}
+            onBackToCODesk={() => setActiveRole('co')}
           />
         )}
 
@@ -437,6 +432,10 @@ export default function App() {
             onUpdateReportStatus={handleUpdateReportStatus}
             onViewPrintable={(rep) => setViewingPrintableReport(rep)}
             currentUser={currentUser}
+            onEditOfficerReport={(off) => {
+              setCurrentOfficer(off);
+              setActiveRole('officer');
+            }}
           />
         )}
 

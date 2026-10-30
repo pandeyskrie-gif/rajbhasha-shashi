@@ -18,7 +18,8 @@ import {
   LogOut,
   User,
   Lock,
-  FileSpreadsheet
+  FileSpreadsheet,
+  FileText
 } from 'lucide-react';
 import { QuarterDateModal } from './QuarterDateModal';
 
@@ -54,7 +55,6 @@ export const Navbar: React.FC<Props> = ({
   isGoogleConnected = false,
 }) => {
   const [copied, setCopied] = useState(false);
-  const [showShareMenu, setShowShareMenu] = useState(false);
   const [showQuarterModal, setShowQuarterModal] = useState(false);
 
   // Multi-year preset list covering past years & current year
@@ -73,23 +73,12 @@ export const Navbar: React.FC<Props> = ({
     { label: 'अप्रैल - जून 2024', val: 'अप्रैल - जून 2024', fy: '2024-2025', from: '2024-04-01', to: '2024-06-30' },
   ];
 
-  const generateShareLink = (targetRole: UserRole) => {
+  // Single universal link for all users (RO, CO, HO)
+  const copySingleUniversalLink = () => {
     const url = new URL(window.location.origin + window.location.pathname);
-    url.searchParams.set('role', targetRole);
-    url.searchParams.set('quarter', selectedQuarter);
-    if (targetRole === 'officer' && selectedOfficer) {
-      url.searchParams.set('staffNo', selectedOfficer.staffNo);
-    } else if (targetRole === 'co' && selectedCircleCode) {
-      url.searchParams.set('circle', selectedCircleCode);
-    }
-    return url.toString();
-  };
-
-  const copyLink = (targetRole: UserRole) => {
-    const link = generateShareLink(targetRole);
-    navigator.clipboard.writeText(link);
+    url.searchParams.set('fullscreenApplet', 'true');
+    navigator.clipboard.writeText(url.toString());
     setCopied(true);
-    setShowShareMenu(false);
     setTimeout(() => setCopied(false), 2500);
   };
 
@@ -139,47 +128,15 @@ export const Navbar: React.FC<Props> = ({
               </div>
             )}
 
-            {/* Share Link Button */}
-            <div className="relative">
-              <button
-                onClick={() => setShowShareMenu(!showShareMenu)}
-                className="inline-flex items-center gap-1.5 px-3 py-1 bg-amber-500 hover:bg-amber-400 text-blue-950 font-bold rounded-md text-xs shadow-sm transition cursor-pointer"
-                title="अधिकारियों व कार्यालयों के साथ शेयर करने हेतु लिंक कॉपी करें"
-              >
-                {copied ? <Check className="w-3.5 h-3.5 text-emerald-900" /> : <Share2 className="w-3.5 h-3.5" />}
-                <span>{copied ? 'कॉपी हुआ!' : 'लिंक शेयर करें'}</span>
-                <ChevronDown className="w-3 h-3" />
-              </button>
-
-              {showShareMenu && (
-                <div className="absolute right-0 mt-1 w-64 bg-white text-slate-800 rounded-lg shadow-xl border border-slate-200 p-2 z-50 text-xs">
-                  <div className="font-bold text-slate-700 pb-1 mb-1 border-b border-slate-100">
-                    सीधा एक्सेस लिंक (Share Link):
-                  </div>
-                  <button
-                    onClick={() => copyLink('officer')}
-                    className="w-full text-left p-2 hover:bg-blue-50 rounded flex items-center justify-between text-blue-900 cursor-pointer"
-                  >
-                    <span>राजभाषा अधिकारी फॉर्म लिंक</span>
-                    <ExternalLink className="w-3 h-3" />
-                  </button>
-                  <button
-                    onClick={() => copyLink('co')}
-                    className="w-full text-left p-2 hover:bg-blue-50 rounded flex items-center justify-between text-indigo-900 cursor-pointer"
-                  >
-                    <span>अंचल कार्यालय समेकन लिंक</span>
-                    <ExternalLink className="w-3 h-3" />
-                  </button>
-                  <button
-                    onClick={() => copyLink('ho')}
-                    className="w-full text-left p-2 hover:bg-blue-50 rounded flex items-center justify-between text-emerald-900 cursor-pointer"
-                  >
-                    <span>प्रधान कार्यालय डैशबोर्ड लिंक</span>
-                    <ExternalLink className="w-3 h-3" />
-                  </button>
-                </div>
-              )}
-            </div>
+            {/* Single Universal Share Link Button for RO, CO & HO */}
+            <button
+              onClick={copySingleUniversalLink}
+              className="inline-flex items-center gap-1.5 px-3 py-1 bg-amber-500 hover:bg-amber-400 text-blue-950 font-bold rounded-md text-xs shadow-sm transition cursor-pointer"
+              title="एकल पोर्टल लिंक कॉपी करें (Single access link for all RO, CO & HO)"
+            >
+              {copied ? <Check className="w-3.5 h-3.5 text-emerald-950 font-black" /> : <Share2 className="w-3.5 h-3.5" />}
+              <span>{copied ? 'लिंक कॉपी हुआ!' : 'पोर्टल लिंक शेयर करें'}</span>
+            </button>
 
             {/* Google Sheets Integration Button */}
             {onOpenGoogleSheets && (
@@ -285,16 +242,52 @@ export const Navbar: React.FC<Props> = ({
               </div>
             )}
 
-            {/* If logged in as CO */}
+            {/* If logged in as CO: Enable both My Report (CO & Concurrent RO) and Subordinate RO Consolidation */}
             {isCO && (
-              <div className="flex items-center gap-2 text-xs">
-                <span className="w-2.5 h-2.5 rounded-full bg-indigo-400"></span>
-                <span className="font-bold text-amber-300">
-                  अधिकृत स्तर: अंचल कार्यालय डेस्क
-                </span>
-                <span className="text-slate-300">
-                  ({currentUser.circleOfficeName} — केवल क्षेत्राधीन क्षेत्रीय कार्यालयों का समेकन व अनुमोदन)
-                </span>
+              <div className="flex items-center justify-between w-full flex-wrap gap-2 py-0.5">
+                <div className="flex items-center gap-1.5 sm:gap-2">
+                  <span className="text-[11px] font-semibold text-blue-300 uppercase tracking-wider mr-1 hidden sm:inline">
+                    अंचल स्तर:
+                  </span>
+
+                  {/* Tab 1: Fill / Edit My CO & Concurrent RO Report */}
+                  <button
+                    onClick={() => setActiveRole('officer')}
+                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-semibold transition cursor-pointer whitespace-nowrap ${
+                      activeRole === 'officer'
+                        ? 'bg-amber-400 text-blue-950 shadow-md font-bold'
+                        : 'text-blue-100 hover:bg-blue-800/80 bg-blue-900/60'
+                    }`}
+                    title="अपनी अंचल कार्यालय एवं समवर्ती RO की रिपोर्ट भरें या संपादित करें"
+                  >
+                    <FileText className="w-3.5 h-3.5" />
+                    <span>1. मेरी रिपोर्ट (CO व समवर्ती RO फॉर्म)</span>
+                  </button>
+
+                  {/* Tab 2: Subordinate RO Consolidation & Review */}
+                  <button
+                    onClick={() => setActiveRole('co')}
+                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-semibold transition cursor-pointer whitespace-nowrap ${
+                      activeRole === 'co'
+                        ? 'bg-amber-400 text-blue-950 shadow-md font-bold'
+                        : 'text-blue-100 hover:bg-blue-800/80 bg-blue-900/60'
+                    }`}
+                    title="अपने क्षेत्राधीन क्षेत्रीय कार्यालयों (RO) की रिपोर्ट समीक्षा, समेकन व HO को प्रेषण"
+                  >
+                    <Building2 className="w-3.5 h-3.5" />
+                    <span>2. अधीनस्थ RO समेकन व HO प्रेषण</span>
+                  </button>
+                </div>
+
+                <div className="flex items-center gap-2 text-xs">
+                  <span className="w-2.5 h-2.5 rounded-full bg-indigo-400"></span>
+                  <span className="font-bold text-amber-300">
+                    {currentUser.circleOfficeName}
+                  </span>
+                  <span className="text-slate-300 hidden md:inline">
+                    ({currentUser.name})
+                  </span>
+                </div>
               </div>
             )}
 

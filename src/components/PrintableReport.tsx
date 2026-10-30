@@ -576,7 +576,7 @@ export const PrintableReport: React.FC<Props> = ({ report, onBack }) => {
                 <th className="border border-slate-600 p-2 text-left">नराकास का नाम</th>
                 <th className="border border-slate-600 p-2">राजभाषा विभाग द्वारा बैठक आयोजन का निर्धारित कैलेंडर माह</th>
                 <th className="border border-slate-600 p-2">बैठक आयोजन की तिथि</th>
-                <th className="border border-slate-600 p-2 text-left">बैठक में उपस्थित कार्यालय प्रमुख</th>
+                <th className="border border-slate-600 p-2 text-left">बैठक में उपस्थित कार्यालय प्रमुख का नाम व पदनाम</th>
                 <th className="border border-slate-600 p-2">सदस्य कार्यालयों की कुल संख्या</th>
                 <th className="border border-slate-600 p-2">उपस्थित कार्यालयों की कुल संख्या</th>
               </tr>
