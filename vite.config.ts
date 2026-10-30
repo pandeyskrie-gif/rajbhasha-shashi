@@ -4,7 +4,7 @@ import path from 'path';
 import {defineConfig} from 'vite';
 
 export default defineConfig(() => {
-  base: '/rajbhasha-shashi/',
+base: '/rajbhasha-shashi/',
   return {
     plugins: [react(), tailwindcss()],
     resolve: {
