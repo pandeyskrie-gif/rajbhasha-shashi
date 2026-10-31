@@ -1,5 +1,6 @@
 import { Officer, Office, UserRole } from '../types';
 import { REGIONAL_OFFICES, CIRCLE_OFFICES } from '../data/seedData';
+import { verifyStrictPassword } from './passwords';
 
 export interface AuthUser {
   role: UserRole;
@@ -58,15 +59,9 @@ export function getOfficeDpCode(officeName: string, fallbackCircleCode?: string)
 }
 
 /**
- * Verify credentials and return authenticated user session
- * Highly accommodating and robust:
- * 1. Login ID: Staff Number, or Name, or Circle Code, or HO (401)
- * 2. Password options:
- *    - StaffNumber@DPcode (e.g. 869679@6974)
- *    - StaffNumber@CircleCode (e.g. 869679@7690)
- *    - StaffNumber@ConcurrentDPcode
- *    - StaffNumber (only the staff number)
- *    - canara@123 / admin / password
+ * Verify credentials with STRICT private password check.
+ * Passwords are individualized and controlled centrally or set by the officer.
+ * Insecure generic fallbacks (like staffNo, canara@123) are disabled.
  */
 export function verifyCredentials(
   loginIdInput: string,
@@ -78,6 +73,10 @@ export function verifyCredentials(
 
   if (!rawLoginId) {
     return { success: false, message: 'कृपया अपनी कर्मचारी संख्या (Staff No) या लॉगिन आईडी दर्ज करें।' };
+  }
+
+  if (!rawPassword) {
+    return { success: false, message: 'कृपया अपना पासवर्ड दर्ज करें।' };
   }
 
   const cleanLoginId = rawLoginId.toLowerCase();
@@ -93,18 +92,8 @@ export function verifyCredentials(
     cleanLoginId.includes('head office') ||
     cleanLoginId === 'admin'
   ) {
-    // Accept standard HO passwords
-    const validHoPass = [
-      '401@401',
-      '401',
-      'admin',
-      'admin@canara',
-      'canara@123',
-      'canara123',
-      'ho@401',
-      'ho',
-    ];
-    if (validHoPass.includes(rawPassword.toLowerCase()) || !rawPassword || rawPassword === '401') {
+    const isHoValid = verifyStrictPassword('401', rawPassword) || verifyStrictPassword('admin', rawPassword);
+    if (isHoValid) {
       return {
         success: true,
         user: {
@@ -118,6 +107,11 @@ export function verifyCredentials(
           circleOfficeName: '401 HEAD OFFICE BENGALURU',
           concurrentOffices: [],
         },
+      };
+    } else {
+      return {
+        success: false,
+        message: 'प्रधान कार्यालय पासवर्ड अमान्य है! कृपया सही पासवर्ड दर्ज करें।',
       };
     }
   }
@@ -134,15 +128,8 @@ export function verifyCredentials(
   );
 
   if (matchedCircle) {
-    const validCoPass = [
-      `${matchedCircle.code}@${matchedCircle.code}`,
-      matchedCircle.code,
-      `canara@${matchedCircle.code}`,
-      'canara@123',
-      'admin',
-      matchedCircle.name.toLowerCase(),
-    ];
-    if (validCoPass.includes(rawPassword.toLowerCase()) || rawPassword === matchedCircle.code) {
+    const isCoValid = verifyStrictPassword(matchedCircle.code, rawPassword);
+    if (isCoValid) {
       return {
         success: true,
         user: {
@@ -156,6 +143,11 @@ export function verifyCredentials(
           circleOfficeName: matchedCircle.name,
           concurrentOffices: [],
         },
+      };
+    } else {
+      return {
+        success: false,
+        message: `अंचल कार्यालय ${matchedCircle.name} का पासवर्ड अमान्य है! कृपया प्रधान कार्यालय द्वारा दिया गया पासवर्ड दर्ज करें।`,
       };
     }
   }
@@ -182,55 +174,9 @@ export function verifyCredentials(
 
   if (officer) {
     const primaryDp = getOfficeDpCode(officer.primaryOfficeName, officer.circleOfficeCode);
-    const circleDp = officer.circleOfficeCode;
+    const isOfficerValid = verifyStrictPassword(officer.staffNo, rawPassword);
 
-    // Collect all valid DP codes associated with this officer
-    const validDpCodes = new Set<string>([primaryDp, circleDp]);
-    (officer.concurrentOffices || []).forEach((cOffice) => {
-      validDpCodes.add(getOfficeDpCode(cOffice, circleDp));
-    });
-
-    // Acceptable passwords:
-    // 1. staffNo@dpCode for any of their offices
-    // 2. staffNo itself
-    // 3. canara@123 / canara123 / canarabank / admin / password
-    // 4. Any staffNo@... pattern or circle office code
-    const cleanPass = rawPassword.toLowerCase();
-    let isPasswordValid = false;
-
-    // Direct check for standard patterns
-    if (
-      cleanPass === officer.staffNo.toLowerCase() ||
-      cleanPass.startsWith(`${officer.staffNo.toLowerCase()}@`) ||
-      cleanPass === `${officer.staffNo}@dp` ||
-      cleanPass === primaryDp.toLowerCase() ||
-      cleanPass === circleDp.toLowerCase() ||
-      cleanPass === 'canara@123' ||
-      cleanPass === 'canara123' ||
-      cleanPass === 'canarabank' ||
-      cleanPass === 'canara' ||
-      cleanPass === 'admin' ||
-      cleanPass === 'password' ||
-      cleanPass === '123456' ||
-      cleanPass === '1234'
-    ) {
-      isPasswordValid = true;
-    }
-
-    // Check if password matches staffNo@dpCode for ANY of their associated offices
-    if (!isPasswordValid) {
-      for (const dp of validDpCodes) {
-        if (
-          cleanPass === `${officer.staffNo}@${dp}`.toLowerCase() ||
-          cleanPass === `${officer.staffNo}@${dp.toLowerCase()}`
-        ) {
-          isPasswordValid = true;
-          break;
-        }
-      }
-    }
-
-    if (isPasswordValid) {
+    if (isOfficerValid) {
       const isHO = officer.circleOfficeCode === '401' || officer.primaryOfficeType === 'HO';
       const isCO = officer.primaryOfficeType === 'CO';
 
@@ -251,13 +197,13 @@ export function verifyCredentials(
     } else {
       return {
         success: false,
-        message: `अमान्य पासवर्ड! श्री/श्रीमती ${officer.name} (कर्मचारी संख्या: ${officer.staffNo}) हेतु मान्य पासवर्ड: (1) "${officer.staffNo}" (केवल कर्मचारी संख्या), (2) "${officer.staffNo}@${primaryDp}" (संख्या@डीपी कोड) अथवा (3) "canara@123"`,
+        message: `अमान्य पासवर्ड! श्री/श्रीमती ${officer.name} (कर्मचारी सं.: ${officer.staffNo}) का पासवर्ड सही नहीं है। कृपया प्रधान कार्यालय (HO / CIBM मणिपाल) से अपना व्यक्तिगत पासवर्ड प्राप्त करें।`,
       };
     }
   }
 
   return {
     success: false,
-    message: `कर्मचारी संख्या / लॉगिन आईडी "${rawLoginId}" नहीं मिली। कृपया अपनी 6-अंकों की कर्मचारी संख्या दर्ज करें (उदा. 869679, 901602) अथवा नीचे दी गई सूची से अपना नाम चुनें।`,
+    message: `कर्मचारी संख्या / लॉगिन आईडी "${rawLoginId}" नहीं मिली। कृपया अपनी मान्य कर्मचारी संख्या दर्ज करें अथवा सूची से अपना नाम चुनें।`,
   };
 }

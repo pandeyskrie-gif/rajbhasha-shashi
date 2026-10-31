@@ -282,17 +282,18 @@ export const LoginScreen: React.FC<Props> = ({ officers, onLoginSuccess, initial
                   </button>
                 </div>
 
-                {/* Password Hint Card (Does NOT expose the secret password value) */}
-                <div className="p-2.5 bg-amber-50/80 border border-amber-200 rounded-xl text-[11px] text-amber-900 space-y-1">
-                  <div className="font-bold flex items-center gap-1 text-amber-950">
-                    <KeyRound className="w-3.5 h-3.5 text-amber-600" />
-                    <span>पासवर्ड संकेत (Password Hint):</span>
+                {/* Secure Password Protection */}
+                <div className="p-2.5 bg-blue-50/80 border border-blue-200 rounded-xl text-[11px] text-blue-950 space-y-1">
+                  <div className="font-bold flex items-center gap-1 text-blue-900">
+                    <KeyRound className="w-3.5 h-3.5 text-blue-600" />
+                    <span>व्यक्तिगत सुरक्षित पासवर्ड (Private Password):</span>
                   </div>
-                  <ul className="list-disc list-inside space-y-0.5 text-[10.5px] text-amber-800">
-                    <li>आपकी <strong>कर्मचारी संख्या (Staff Number)</strong></li>
-                    <li>अथवा <strong>कर्मचारी_संख्या@मूल कार्यालय DP कोड</strong> (उदा. StaffNo@DPCode)</li>
-                    <li>अथवा बैंक डिफ़ॉल्ट पासवर्ड <span className="font-mono font-bold">canara@123</span></li>
-                  </ul>
+                  <p className="text-[10.5px] text-slate-600">
+                    कृपया प्रधान कार्यालय (HO / CIBM मणिपाल) द्वारा आपको आवंटित गुप्त पासवर्ड अथवा आपके द्वारा सेट किया गया पासवर्ड दर्ज करें।
+                  </p>
+                  <p className="text-[10px] text-blue-700 italic">
+                    सुरक्षा निर्देश: कोई भी दूसरा व्यक्ति आपका डेटा न देख सके, इसके लिए प्रत्येक अधिकारी का पासवर्ड पूरी तरह गोपनीय व अलग है।
+                  </p>
                 </div>
               </div>
 
@@ -363,13 +364,13 @@ export const LoginScreen: React.FC<Props> = ({ officers, onLoginSuccess, initial
                   </button>
                 </div>
 
-                <div className="p-2.5 bg-indigo-50 border border-indigo-200 rounded-xl text-[11px] text-indigo-900 space-y-1">
-                  <div className="font-bold flex items-center gap-1 text-indigo-950">
+                <div className="p-2.5 bg-indigo-50 border border-indigo-200 rounded-xl text-[11px] text-indigo-950 space-y-1">
+                  <div className="font-bold flex items-center gap-1 text-indigo-900">
                     <KeyRound className="w-3.5 h-3.5 text-indigo-600" />
-                    <span>पासवर्ड संकेत (Hint):</span>
+                    <span>अंचल सुरक्षित पासवर्ड (CO Authorized Key):</span>
                   </div>
-                  <p className="text-[10.5px] text-indigo-800">
-                    अंचल कोड (उदा. <strong>{selectedCircleCode}</strong>) अथवा <strong>{selectedCircleCode}@{selectedCircleCode}</strong> अथवा <strong>canara@{selectedCircleCode}</strong>
+                  <p className="text-[10.5px] text-slate-600">
+                    कृपया प्रधान कार्यालय (HO) द्वारा आपके अंचल कार्यालय को आवंटित किया गया अधिकृत पासवर्ड दर्ज करें।
                   </p>
                 </div>
               </div>
@@ -414,7 +415,7 @@ export const LoginScreen: React.FC<Props> = ({ officers, onLoginSuccess, initial
                   <input
                     type={showPasswordText ? 'text' : 'password'}
                     required
-                    placeholder="HO पासवर्ड दर्ज करें..."
+                    placeholder="HO एडमिन पासवर्ड दर्ज करें..."
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     className="w-full pl-3 pr-10 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-xs font-semibold text-slate-900 focus:bg-white focus:ring-2 focus:ring-emerald-600 outline-none"
@@ -428,13 +429,13 @@ export const LoginScreen: React.FC<Props> = ({ officers, onLoginSuccess, initial
                   </button>
                 </div>
 
-                <div className="p-2.5 bg-emerald-50 border border-emerald-200 rounded-xl text-[11px] text-emerald-900 space-y-1">
-                  <div className="font-bold flex items-center gap-1 text-emerald-950">
+                <div className="p-2.5 bg-emerald-50 border border-emerald-200 rounded-xl text-[11px] text-emerald-950 space-y-1">
+                  <div className="font-bold flex items-center gap-1 text-emerald-900">
                     <KeyRound className="w-3.5 h-3.5 text-emerald-600" />
-                    <span>पासवर्ड संकेत (Hint):</span>
+                    <span>HO एडमिन सुरक्षा:</span>
                   </div>
-                  <p className="text-[10.5px] text-emerald-800">
-                    HO कोड (उदा. <strong>401</strong>) अथवा <strong>401@401</strong> अथवा <strong>admin</strong>
+                  <p className="text-[10.5px] text-slate-600">
+                    केवल अधिकृत प्रधान कार्यालय प्रशासक (Shashi Kant Pandey, Senior Manager (OL), CIBM Manipal) हेतु।
                   </p>
                 </div>
               </div>

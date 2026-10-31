@@ -41,7 +41,8 @@ import {
   Sparkles,
   Layers,
   Building2,
-  ListOrdered
+  ListOrdered,
+  KeyRound
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { exportSingleReportToExcel } from '../utils/excelExport';
@@ -65,6 +66,7 @@ interface Props {
   currentUser?: AuthUser | null;
   onLogout?: () => void;
   onBackToCODesk?: () => void;
+  onOpenChangePassword?: () => void;
 }
 
 export type OfficerPortalTab = 
@@ -100,6 +102,7 @@ export const OfficerPortal: React.FC<Props> = ({
   currentUser,
   onLogout,
   onBackToCODesk,
+  onOpenChangePassword,
 }) => {
   // Find or create quarterly report for this officer and quarter
   const [reportData, setReportData] = useState<QuarterlyReport | null>(null);
@@ -694,6 +697,17 @@ export const OfficerPortal: React.FC<Props> = ({
                 <span className="text-xs bg-slate-100 text-slate-800 font-bold px-3 py-1.5 rounded-lg border border-slate-300 inline-flex items-center gap-1">
                   <span>🔒 केवल अधिकृत प्रोफ़ाइल</span>
                 </span>
+                {onOpenChangePassword && (
+                  <button
+                    type="button"
+                    onClick={onOpenChangePassword}
+                    className="text-xs bg-amber-50 hover:bg-amber-100 text-amber-900 font-bold px-2.5 py-1.5 rounded-lg border border-amber-300 transition inline-flex items-center gap-1 cursor-pointer"
+                    title="अपना व्यक्तिगत पासवर्ड बदलें"
+                  >
+                    <KeyRound className="w-3.5 h-3.5 text-amber-600" />
+                    <span>पासवर्ड बदलें</span>
+                  </button>
+                )}
                 {onLogout && (
                   <button
                     type="button"

@@ -15,6 +15,8 @@ import { MasterManagement } from './components/MasterManagement';
 import { PrintableReport } from './components/PrintableReport';
 import { LoginScreen } from './components/LoginScreen';
 import { GoogleSheetsModal } from './components/GoogleSheetsModal';
+import { ChangePasswordModal } from './components/ChangePasswordModal';
+import { CentralPasswordModal } from './components/CentralPasswordModal';
 import { initGoogleAuth, subscribeToGoogleAuth } from './services/googleAuth';
 
 
@@ -43,6 +45,8 @@ export default function App() {
   });
 
   const [showGoogleSheetsModal, setShowGoogleSheetsModal] = useState(false);
+  const [showChangePasswordModal, setShowChangePasswordModal] = useState(false);
+  const [showCentralPasswordModal, setShowCentralPasswordModal] = useState(false);
   const [isGoogleConnectedState, setIsGoogleConnectedState] = useState(false);
 
   const [allOffices] = useState<Office[]>(REGIONAL_OFFICES);
@@ -391,6 +395,8 @@ export default function App() {
         onLogout={handleLogout}
         onOpenGoogleSheets={() => setShowGoogleSheetsModal(true)}
         isGoogleConnected={isGoogleConnectedState}
+        onOpenChangePassword={() => setShowChangePasswordModal(true)}
+        onOpenCentralPasswords={() => setShowCentralPasswordModal(true)}
       />
 
       {/* Main Role-Specific View */}
@@ -417,6 +423,7 @@ export default function App() {
             currentUser={currentUser}
             onLogout={handleLogout}
             onBackToCODesk={() => setActiveRole('co')}
+            onOpenChangePassword={() => setShowChangePasswordModal(true)}
           />
         )}
 
@@ -590,6 +597,20 @@ export default function App() {
         circleCode={selectedCircleCode}
         allReports={reports.filter(r => r.quarter === selectedQuarter)}
         allOfficers={officers}
+      />
+
+      {/* Change Personal Password Modal */}
+      <ChangePasswordModal
+        isOpen={showChangePasswordModal}
+        onClose={() => setShowChangePasswordModal(false)}
+        currentUser={currentUser}
+      />
+
+      {/* Central Password Management Modal (HO Admin - Shashi Kant Pandey) */}
+      <CentralPasswordModal
+        isOpen={showCentralPasswordModal}
+        onClose={() => setShowCentralPasswordModal(false)}
+        officers={officers}
       />
 
       {/* Global Footer */}

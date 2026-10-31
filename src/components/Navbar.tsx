@@ -19,7 +19,8 @@ import {
   User,
   Lock,
   FileSpreadsheet,
-  FileText
+  FileText,
+  KeyRound
 } from 'lucide-react';
 import { QuarterDateModal } from './QuarterDateModal';
 
@@ -37,6 +38,8 @@ interface Props {
   onLogout: () => void;
   onOpenGoogleSheets?: () => void;
   isGoogleConnected?: boolean;
+  onOpenChangePassword?: () => void;
+  onOpenCentralPasswords?: () => void;
 }
 
 export const Navbar: React.FC<Props> = ({
@@ -53,6 +56,8 @@ export const Navbar: React.FC<Props> = ({
   onLogout,
   onOpenGoogleSheets,
   isGoogleConnected = false,
+  onOpenChangePassword,
+  onOpenCentralPasswords,
 }) => {
   const [copied, setCopied] = useState(false);
   const [showQuarterModal, setShowQuarterModal] = useState(false);
@@ -122,14 +127,37 @@ export const Navbar: React.FC<Props> = ({
                       : 'प्रधान कार्यालय (HO)'}
                   </span>
                 </div>
+                {onOpenChangePassword && (
+                  <button
+                    type="button"
+                    onClick={onOpenChangePassword}
+                    className="p-1 text-slate-300 hover:text-amber-300 hover:bg-white/10 rounded transition cursor-pointer ml-1"
+                    title="अपना पासवर्ड बदलें (Change Password)"
+                  >
+                    <KeyRound className="w-3.5 h-3.5" />
+                  </button>
+                )}
                 <button
                   onClick={onLogout}
-                  className="ml-2 p-1 text-slate-300 hover:text-red-300 hover:bg-red-950/50 rounded transition cursor-pointer"
+                  className="p-1 text-slate-300 hover:text-red-300 hover:bg-red-950/50 rounded transition cursor-pointer"
                   title="लॉगआउट करें (Sign Out)"
                 >
                   <LogOut className="w-3.5 h-3.5" />
                 </button>
               </div>
+            )}
+
+            {/* Central Password Management (For HO Admin / Shashi Kant Pandey) */}
+            {isHO && onOpenCentralPasswords && (
+              <button
+                type="button"
+                onClick={onOpenCentralPasswords}
+                className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-amber-400 hover:bg-amber-300 text-blue-950 font-bold rounded-md text-xs shadow-xs transition cursor-pointer"
+                title="सभी अधिकारियों का व्यक्तिगत गुप्त पासवर्ड देखें, बदलें व साझा करें"
+              >
+                <KeyRound className="w-3.5 h-3.5 text-blue-950" />
+                <span>पासवर्ड प्रबंधन</span>
+              </button>
             )}
 
             {/* Single Universal Share Link Button for RO, CO & HO */}
