@@ -167,6 +167,26 @@ export interface CustomColumnValue {
   remarks?: string;
 }
 
+// Signed Authentic PDF Record (User-requested: Head & OL signatures verified PDF)
+export interface SignedPdfRecord {
+  id: string;
+  fileName: string;
+  fileSize: number; // in bytes
+  fileType: string;
+  base64Data: string; // Data URL for persistent storage & browser preview/download
+  uploadedAt: string; // ISO date-time
+  uploadedByStaffNo: string;
+  uploadedByName: string;
+  signedByOfficerName: string; // राजभाषा अधिकारी हस्ताक्षरकर्ता का नाम व पदनाम
+  signedByHeadName: string; // कार्यालय प्रमुख हस्ताक्षरकर्ता का नाम व पदनाम
+  signatureDate: string; // हस्ताक्षर तिथि
+  remarks?: string; // विशेष विवरण / टिप्पणी
+  status: 'हस्ताक्षरित प्रति संलग्न' | 'प्र.का. द्वारा सत्यापित' | 'संशोधन अपेक्षित';
+  verifiedByHOAt?: string;
+  verifiedByHOOfficer?: string; // HO verifier e.g. "शशि कांत पांडेय (वरिष्ठ प्रबंधक - राजभाषा)"
+  hoRemarks?: string;
+}
+
 export type UserRole = 'officer' | 'co' | 'ho' | 'admin';
 
 export type ReportStatus = 'ड्राफ्ट (Draft)' | 'अंचल को प्रस्तुत (Submitted to CO)' | 'अंचल द्वारा स्वीकृत (Approved by CO)' | 'प्रधान कार्यालय को प्रेषित (Forwarded to HO)';
@@ -221,4 +241,8 @@ export interface QuarterlyReport {
   submittedToCOAt?: string;
   approvedByCOAt?: string;
   coFeedback?: string;
+
+  // User-requested Authentic Signed PDF (OL & Head of Office Signatures) - strictly HO-viewable
+  signedPdf?: SignedPdfRecord | null;
 }
+

@@ -439,6 +439,7 @@ export const CircleOfficePortal: React.FC<Props> = ({
                   </>
                 )}
 
+                <th className="p-3 min-w-[140px] text-center">हस्ताक्षरित प्रति (Signed PDF)</th>
                 <th className="p-3 min-w-[100px]">अंतिम अद्यतन</th>
                 <th className="p-3 min-w-[150px] text-center sticky right-0 bg-slate-100 shadow-xs">कार्रवाई (Action)</th>
               </tr>
@@ -679,6 +680,23 @@ export const CircleOfficePortal: React.FC<Props> = ({
                           )}
                         </td>
                       )}
+
+                      <td className="p-3 text-center">
+                        {rep?.signedPdf ? (
+                          <div className="space-y-0.5">
+                            <span className="inline-block bg-emerald-100 text-emerald-900 border border-emerald-300 font-bold px-2 py-0.5 rounded-full text-[10px]">
+                              ✓ संलग्न ({rep.signedPdf.signatureDate || 'सत्यापित'})
+                            </span>
+                            <span className="text-[9px] text-slate-500 block truncate max-w-[130px]" title={`हस्ताक्षरकर्ता: ${rep.signedPdf.signedByHeadName}`}>
+                              {rep.signedPdf.signedByHeadName || 'हस्ताक्षरित'}
+                            </span>
+                          </div>
+                        ) : (
+                          <span className="text-[10px] text-slate-400 italic">
+                            लंबित
+                          </span>
+                        )}
+                      </td>
 
                       <td className="p-3 text-slate-600 text-[11px]">
                         {rep?.updatedAt ? new Date(rep.updatedAt).toLocaleDateString('hi-IN') : '-'}

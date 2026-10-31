@@ -18,26 +18,45 @@ export const PrintableReport: React.FC<Props> = ({ report, onBack }) => {
   return (
     <div className="bg-slate-100 min-h-screen py-6 px-4 print:p-0 print:bg-white text-slate-800">
       {/* Top action bar (hidden during print) */}
-      <div className="max-w-4xl mx-auto mb-6 flex items-center justify-between bg-white p-4 rounded-xl shadow-sm border border-slate-200 print:hidden">
-        <button
-          onClick={onBack}
-          className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-slate-700 bg-slate-100 hover:bg-slate-200 rounded-lg transition cursor-pointer"
-        >
-          <ArrowLeft className="w-4 h-4" />
-          वापस जाएं (Back)
-        </button>
-
-        <div className="flex items-center gap-3">
-          <span className="text-xs bg-amber-50 text-amber-800 border border-amber-200 px-3 py-1 rounded-full font-medium">
-            स्थिति: {report.status}
-          </span>
+      <div className="max-w-4xl mx-auto mb-6 bg-white p-4 rounded-xl shadow-sm border border-slate-200 print:hidden space-y-3">
+        <div className="flex items-center justify-between flex-wrap gap-3">
           <button
-            onClick={handlePrint}
-            className="inline-flex items-center gap-2 px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-medium text-sm rounded-lg shadow-sm transition cursor-pointer"
+            onClick={onBack}
+            className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-slate-700 bg-slate-100 hover:bg-slate-200 rounded-lg transition cursor-pointer"
           >
-            <Printer className="w-4 h-4" />
-            प्रिंट / पीडीएफ सेव करें (Print / Save PDF)
+            <ArrowLeft className="w-4 h-4" />
+            वापस जाएं (Back)
           </button>
+
+          <div className="flex items-center gap-2.5 flex-wrap">
+            <span className="text-xs bg-amber-50 text-amber-800 border border-amber-200 px-3 py-1 rounded-full font-medium">
+              स्थिति: {report.status}
+            </span>
+
+            {report.signedPdf ? (
+              <span className="text-xs bg-emerald-100 text-emerald-900 border border-emerald-300 px-3 py-1 rounded-full font-bold inline-flex items-center gap-1">
+                <span>✓ हस्ताक्षरित प्रति संलग्न ({report.signedPdf.status})</span>
+              </span>
+            ) : (
+              <span className="text-xs bg-amber-100 text-amber-900 border border-amber-300 px-3 py-1 rounded-full font-medium">
+                हस्ताक्षरित प्रति: लंबित
+              </span>
+            )}
+
+            <button
+              onClick={handlePrint}
+              className="inline-flex items-center gap-2 px-5 py-2 bg-blue-600 hover:bg-blue-700 text-white font-medium text-sm rounded-lg shadow-sm transition cursor-pointer"
+            >
+              <Printer className="w-4 h-4" />
+              प्रिंट / पीडीएफ सेव करें (Print / Save PDF)
+            </button>
+          </div>
+        </div>
+
+        <div className="p-2.5 bg-blue-50 border border-blue-200 rounded-lg text-xs text-blue-900 flex items-center justify-between">
+          <span>
+            💡 <strong>प्रामाणिकता निर्देश:</strong> इस रिपोर्ट का प्रिंटआउट लेकर पृष्ठ के अंत में <strong>राजभाषा अधिकारी</strong> व <strong>कार्यालय प्रमुख</strong> के हस्ताक्षर व मुहर करवाएं, तत्पश्चात हस्ताक्षरित प्रति पोर्टल पर अपलोड करें।
+          </span>
         </div>
       </div>
 

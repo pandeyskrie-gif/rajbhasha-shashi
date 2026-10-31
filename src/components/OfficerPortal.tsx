@@ -16,7 +16,8 @@ import {
   MagazineRow,
   HouseJournalRow,
   TolicMemberRow,
-  TolicConvenerRow
+  TolicConvenerRow,
+  SignedPdfRecord
 } from '../types';
 import { 
   FileText, 
@@ -42,11 +43,14 @@ import {
   Layers,
   Building2,
   ListOrdered,
-  KeyRound
+  KeyRound,
+  FileCheck2,
+  Lock,
+  ShieldCheck
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { exportSingleReportToExcel } from '../utils/excelExport';
-
+import { SignedPdfUploadSection } from './SignedPdfUploadSection';
 import { AuthUser } from '../utils/auth';
 
 interface Props {
@@ -82,7 +86,8 @@ export type OfficerPortalTab =
   | 'innovative' 
   | 'awards' 
   | 'tolic' 
-  | 'custom' 
+  | 'custom'
+  | 'signed_pdf' 
   | 'all';
 
 export const OfficerPortal: React.FC<Props> = ({
@@ -343,6 +348,29 @@ export const OfficerPortal: React.FC<Props> = ({
     }
 
     setTimeout(() => setSaveSuccessMsg(''), 4000);
+  };
+
+  const handleUpdateSignedPdf = (signedPdf: SignedPdfRecord | null) => {
+    if (!reportData) return;
+    const updated: QuarterlyReport = {
+      ...reportData,
+      signedPdf,
+      updatedAt: new Date().toISOString(),
+    };
+    setReportData(updated);
+    onSaveReport(updated);
+
+    if (signedPdf) {
+      confetti({
+        particleCount: 80,
+        spread: 60,
+        origin: { y: 0.6 },
+      });
+      setSaveSuccessMsg('हस्ताक्षरित एवं अनुमोदित रिपोर्ट (PDF) सफलतापूर्वक संलग्न कर दी गई है! (केवल प्र.का. स्तर पर दृश्य)');
+    } else {
+      setSaveSuccessMsg('हस्ताक्षरित रिपोर्ट पीडीएफ हटा दी गई है।');
+    }
+    setTimeout(() => setSaveSuccessMsg(''), 5000);
   };
 
   const updateTranslation = (field: keyof QuarterlyReport['translation'], value: any) => {
@@ -1040,6 +1068,26 @@ export const OfficerPortal: React.FC<Props> = ({
         >
           <Plus className="w-3.5 h-3.5" />
           <span>12. अतिरिक्त व हस्ताक्षर</span>
+        </button>
+        <button
+          onClick={() => setActiveTab('signed_pdf')}
+          className={`px-3 py-2 rounded-t-lg transition whitespace-nowrap cursor-pointer flex items-center gap-1.5 ${
+            activeTab === 'signed_pdf'
+              ? 'bg-indigo-700 text-white shadow-sm font-bold'
+              : 'text-indigo-900 bg-indigo-50 hover:bg-indigo-100 border border-indigo-200'
+          }`}
+        >
+          <FileCheck2 className="w-3.5 h-3.5" />
+          <span>13. हस्ताक्षरित रिपोर्ट (Signed PDF)</span>
+          {reportData.signedPdf ? (
+            <span className="bg-emerald-500 text-white px-1.5 py-0.2 rounded-full text-[10px] font-bold">
+              ✓ संलग्न
+            </span>
+          ) : (
+            <span className="bg-amber-400 text-blue-950 px-1.5 py-0.2 rounded-full text-[10px] font-bold">
+              लंबित
+            </span>
+          )}
         </button>
         <button
           onClick={() => setActiveTab('all')}
@@ -3262,6 +3310,45 @@ export const OfficerPortal: React.FC<Props> = ({
               </div>
             </div>
           </div>
+        </div>
+      )}
+
+      {/* Tab 13: Signed Authentic PDF Upload (OL & Office Head Signatures verified) */}
+      {(activeTab === 'signed_pdf' || activeTab === 'custom' || activeTab === 'all') && (
+        <div className="space-y-4 mb-6">
+          {activeTab === 'signed_pdf' && (
+            <div className="bg-gradient-to-r from-blue-900 to-indigo-950 text-white p-5 rounded-2xl shadow-sm border border-blue-800 mb-4">
+              <div className="flex items-start gap-3">
+                <div className="w-10 h-10 rounded-xl bg-amber-400 text-blue-950 flex items-center justify-center font-bold shrink-0 shadow">
+                  <FileCheck2 className="w-6 h-6" />
+                </div>
+                <div>
+                  <h3 className="text-base font-bold text-white">
+                    हस्ताक्षरित एवं अनुमोदित रिपोर्ट अपलोड प्रक्रिया (3 सरल चरण)
+                  </h3>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mt-3 text-xs text-blue-100">
+                    <div className="p-3 bg-white/10 rounded-xl border border-white/10">
+                      <strong className="block text-amber-300 mb-1">१. रिपोर्ट प्रिंट / पीडीएफ लें:</strong>
+                      नीचे दिए गए "रिपोर्ट पूर्वावलोकन / पीडीएफ" बटन पर क्लिक करके तैयार रिपोर्ट का प्रिंट निकालें।
+                    </div>
+                    <div className="p-3 bg-white/10 rounded-xl border border-white/10">
+                      <strong className="block text-amber-300 mb-1">२. हस्ताक्षर एवं मुहर करवाएँ:</strong>
+                      अंतिम पृष्ठ पर राजभाषा अधिकारी एवं कार्यालय प्रमुख (RO/CO Head) के हस्ताक्षर व कार्यालय मुहर लगवाएं।
+                    </div>
+                    <div className="p-3 bg-white/10 rounded-xl border border-white/10">
+                      <strong className="block text-amber-300 mb-1">३. यहाँ पीडीएफ अपलोड करें:</strong>
+                      हस्ताक्षरित प्रति को स्कैन कर नीचे अपलोड करें। यह प्रति केवल प्रधान कार्यालय (HO) स्तर पर ही जांची जा सकेगी।
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          <SignedPdfUploadSection
+            reportData={reportData}
+            onUpdateSignedPdf={handleUpdateSignedPdf}
+          />
         </div>
       )}
 

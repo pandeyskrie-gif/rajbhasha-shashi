@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Officer, QuarterlyReport, Office, TransferRecord } from '../types';
+import { Officer, QuarterlyReport, Office, TransferRecord, SignedPdfRecord } from '../types';
 import { CIRCLE_OFFICES } from '../data/seedData';
 import { 
   ShieldCheck, 
@@ -23,10 +23,13 @@ import {
   Clock,
   History,
   Sparkles,
-  Layers
+  Layers,
+  Lock,
+  ExternalLink
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { exportHeadOfficeMasterToExcel } from '../utils/excelExport';
+import { SignedPdfViewerModal } from './SignedPdfViewerModal';
 
 interface Props {
   circleOffices: { code: string; name: string }[];
@@ -38,6 +41,7 @@ interface Props {
   onSelectCircleFromHO: (circleCode: string) => void;
   transferHistory: TransferRecord[];
   onExecuteTransfer: (record: TransferRecord) => void;
+  onSaveReport?: (report: QuarterlyReport) => void;
 }
 
 export const HeadOfficePortal: React.FC<Props> = ({
@@ -50,10 +54,18 @@ export const HeadOfficePortal: React.FC<Props> = ({
   onSelectCircleFromHO,
   transferHistory,
   onExecuteTransfer,
+  onSaveReport,
 }) => {
-  const [activeHoTab, setActiveHoTab] = useState<'dashboard' | 'transfer' | 'translation' | 'visits' | 'publications_tolic'>('dashboard');
+  const [activeHoTab, setActiveHoTab] = useState<'dashboard' | 'transfer' | 'translation' | 'visits' | 'publications_tolic' | 'signed_pdfs'>('dashboard');
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<'all' | 'submitted' | 'pending'>('all');
+
+  // Signed PDF repository states
+  const [selectedSignedReport, setSelectedSignedReport] = useState<QuarterlyReport | null>(null);
+  const [signedCircleFilter, setSignedCircleFilter] = useState<string>('all');
+  const [signedStatusFilter, setSignedStatusFilter] = useState<'all' | 'uploaded' | 'verified' | 'pending'>('all');
+  const [signedSearch, setSignedSearch] = useState<string>('');
+  const [hoActionFeedback, setHoActionFeedback] = useState<string>('');
 
   // Transfer form state
   const [selectedStaffNo, setSelectedStaffNo] = useState<string>(officers[0]?.staffNo || '');
@@ -102,10 +114,43 @@ export const HeadOfficePortal: React.FC<Props> = ({
   );
   const totalMagazines = quarterReports.reduce((sum, r) => sum + r.magazines.length, 0);
 
+  // User-requested Authentic Signed PDF aggregations (Head Office Exclusive)
+  const totalSignedPdfReports = quarterReports.filter((r) => !!r.signedPdf).length;
+  const totalVerifiedSignedPdfReports = quarterReports.filter(
+    (r) => r.signedPdf?.status === 'प्र.का. द्वारा सत्यापित'
+  ).length;
+
+  const handleVerifySignedPdf = (
+    status: 'प्र.का. द्वारा सत्यापित' | 'संशोधन अपेक्षित',
+    remarks: string
+  ) => {
+    if (!selectedSignedReport || !selectedSignedReport.signedPdf) return;
+    const updatedRecord: SignedPdfRecord = {
+      ...selectedSignedReport.signedPdf,
+      status,
+      verifiedByHOAt: new Date().toISOString(),
+      verifiedByHOOfficer: 'श्री शशि कांत पांडेय (वरिष्ठ प्रबंधक - राजभाषा)',
+      hoRemarks: remarks,
+    };
+    const updatedReport: QuarterlyReport = {
+      ...selectedSignedReport,
+      signedPdf: updatedRecord,
+      updatedAt: new Date().toISOString(),
+    };
+    if (onSaveReport) {
+      onSaveReport(updatedReport);
+    }
+    setSelectedSignedReport(updatedReport);
+    setHoActionFeedback(`रिपोर्ट (${selectedSignedReport.primaryOfficeName}) को "${status}" के रूप में अद्यतन किया गया।`);
+    setTimeout(() => setHoActionFeedback(''), 5000);
+    confetti({ particleCount: 70, spread: 60 });
+  };
+
   // Build Circle-wise statistics table
   const circleStats = circleOffices.map((c) => {
     const cOfficers = officers.filter((o) => o.circleOfficeCode === c.code);
     const cReports = quarterReports.filter((r) => r.circleOfficeCode === c.code);
+    const signedCount = cReports.filter((r) => !!r.signedPdf).length;
 
     const receivedTrans = cReports.reduce(
       (s, r) => s + (Number(r.translation?.pagesReceivedFromHO) || 0),
@@ -122,6 +167,7 @@ export const HeadOfficePortal: React.FC<Props> = ({
       ...c,
       officersCount: cOfficers.length,
       submittedReports: submittedCount,
+      signedCount,
       receivedTrans,
       doneTrans,
       visits,
@@ -283,6 +329,21 @@ export const HeadOfficePortal: React.FC<Props> = ({
           >
             <BookOpen className="w-4 h-4" />
             <span>५. पत्रिकाएं, नराकास, नवोन्मेषी कार्य व पुरस्कार (तालिका 10-15)</span>
+          </button>
+
+          <button
+            onClick={() => setActiveHoTab('signed_pdfs')}
+            className={`px-4 py-2 rounded-lg transition whitespace-nowrap cursor-pointer flex items-center gap-1.5 ${
+              activeHoTab === 'signed_pdfs'
+                ? 'bg-amber-400 text-blue-950 shadow-md font-bold'
+                : 'text-blue-100 hover:bg-blue-800'
+            }`}
+          >
+            <FileCheck2 className="w-4 h-4" />
+            <span>६. हस्ताक्षरित अनुमोदित रिपोर्टें (Signed PDFs - HO Exclusive)</span>
+            <span className="bg-indigo-950 text-amber-300 border border-amber-400/40 px-2 py-0.2 rounded-full text-[10px] font-mono font-bold">
+              {totalSignedPdfReports} संलग्न
+            </span>
           </button>
         </div>
       </div>
@@ -1111,6 +1172,349 @@ export const HeadOfficePortal: React.FC<Props> = ({
           </div>
         </div>
       )}
+
+      {/* Tab 6: Signed Authentic Reports Repository (Head Office Exclusive - User Requested) */}
+      {activeHoTab === 'signed_pdfs' && (
+        <div className="space-y-6">
+          {/* Action Feedback Banner */}
+          {hoActionFeedback && (
+            <div className="p-4 bg-emerald-50 border border-emerald-300 rounded-xl text-emerald-900 text-xs font-semibold flex items-center gap-2.5 shadow-xs animate-in fade-in">
+              <CheckCircle2 className="w-5 h-5 text-emerald-600 shrink-0" />
+              <span>{hoActionFeedback}</span>
+            </div>
+          )}
+
+          {/* Exclusive HO Repository Banner */}
+          <div className="bg-gradient-to-r from-indigo-950 via-blue-900 to-slate-900 text-white rounded-2xl p-6 shadow-md border border-indigo-800">
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+              <div className="flex items-start gap-3.5">
+                <div className="w-12 h-12 rounded-xl bg-amber-400 text-blue-950 flex items-center justify-center font-bold text-xl shadow shrink-0">
+                  <FileCheck2 className="w-7 h-7" />
+                </div>
+                <div>
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span className="text-xs bg-amber-400 text-blue-950 font-extrabold px-2.5 py-0.5 rounded-full">
+                      केवल प्रधान कार्यालय स्तर पर आरक्षित
+                    </span>
+                    <span className="text-xs bg-blue-800/80 text-blue-100 px-2 py-0.5 rounded font-mono">
+                      समीक्षा अवधि: {selectedQuarter}
+                    </span>
+                    <span className="text-xs bg-indigo-500/30 text-indigo-200 border border-indigo-400/30 px-2 py-0.5 rounded inline-flex items-center gap-1">
+                      <Lock className="w-3 h-3 text-amber-300" />
+                      <span>गोपनीय केंद्रीय रिपॉजिटरी</span>
+                    </span>
+                  </div>
+                  <h3 className="text-xl font-black text-white tracking-tight mt-1">
+                    अखिल भारतीय हस्ताक्षरित एवं प्रमाणित रिपोर्ट रिपॉजिटरी (Authentic Signed Reports)
+                  </h3>
+                  <p className="text-xs text-blue-200 mt-0.5 max-w-3xl">
+                    सभी क्षेत्रीय व अंचल कार्यालयों द्वारा प्रिंट निकालकर <strong>राजभाषा अधिकारी</strong> तथा <strong>कार्यालय प्रमुख (Head of Office)</strong> के भौतिक/डिजिटल हस्ताक्षर व मुहर उपरांत अपलोड की गई मूल अधिकृत प्रतियां। यह खंड अन्य अधिकारियों को नहीं दिखता।
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* Quick KPI Row */}
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-5 pt-4 border-t border-indigo-800/60">
+              <div className="bg-white/10 p-3 rounded-xl border border-white/10">
+                <span className="text-[11px] text-blue-200 block">अपेक्षित रिपोर्टें (कुल अधिकारी)</span>
+                <span className="text-2xl font-black text-white mt-0.5 block">{totalOfficers}</span>
+                <span className="text-[10px] text-blue-300">28 अंचलों में</span>
+              </div>
+
+              <div className="bg-white/10 p-3 rounded-xl border border-white/10">
+                <span className="text-[11px] text-amber-300 font-semibold block">हस्ताक्षरित प्रतियां संलग्न</span>
+                <span className="text-2xl font-black text-amber-300 mt-0.5 block">{totalSignedPdfReports}</span>
+                <span className="text-[10px] text-blue-200">
+                  {Math.round((totalSignedPdfReports / Math.max(1, totalOfficers)) * 100)}% अपलोड पूर्ण
+                </span>
+              </div>
+
+              <div className="bg-white/10 p-3 rounded-xl border border-white/10">
+                <span className="text-[11px] text-emerald-300 font-semibold block">प्र.का. द्वारा सत्यापित</span>
+                <span className="text-2xl font-black text-emerald-300 mt-0.5 block">{totalVerifiedSignedPdfReports}</span>
+                <span className="text-[10px] text-emerald-200">पूर्णतः अनुमोदित</span>
+              </div>
+
+              <div className="bg-white/10 p-3 rounded-xl border border-white/10">
+                <span className="text-[11px] text-rose-300 font-semibold block">हस्ताक्षरित प्रति लंबित</span>
+                <span className="text-2xl font-black text-rose-300 mt-0.5 block">
+                  {Math.max(0, totalOfficers - totalSignedPdfReports)}
+                </span>
+                <span className="text-[10px] text-rose-200">अपलोड प्रतीक्षित</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Filter and Search Bar */}
+          <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-4">
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-3">
+              <div className="flex flex-wrap items-center gap-3">
+                {/* Circle Filter */}
+                <div className="flex items-center gap-1.5">
+                  <span className="text-xs font-bold text-slate-700">अंचल:</span>
+                  <select
+                    value={signedCircleFilter}
+                    onChange={(e) => setSignedCircleFilter(e.target.value)}
+                    className="text-xs bg-slate-50 border border-slate-300 rounded-lg p-2 font-semibold"
+                  >
+                    <option value="all">सभी 28 अंचल कार्यालय (All Circles)</option>
+                    {circleOffices.map((c) => (
+                      <option key={c.code} value={c.code}>
+                        {c.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                {/* Status Filter */}
+                <div className="flex items-center gap-1.5">
+                  <span className="text-xs font-bold text-slate-700">स्थिति:</span>
+                  <select
+                    value={signedStatusFilter}
+                    onChange={(e) => setSignedStatusFilter(e.target.value as any)}
+                    className="text-xs bg-slate-50 border border-slate-300 rounded-lg p-2 font-semibold"
+                  >
+                    <option value="all">सभी स्थितियां (All Statuses)</option>
+                    <option value="uploaded">केवल संलग्न प्रतियां (Attached Only)</option>
+                    <option value="verified">केवल प्र.का. सत्यापित (Verified Only)</option>
+                    <option value="pending">केवल लंबित (Pending Upload)</option>
+                  </select>
+                </div>
+              </div>
+
+              {/* Search Box */}
+              <div className="relative w-full md:w-72">
+                <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+                <input
+                  type="text"
+                  placeholder="अधिकारी, स्टाफ नं., कार्यालय खोजें..."
+                  value={signedSearch}
+                  onChange={(e) => setSignedSearch(e.target.value)}
+                  className="w-full pl-9 pr-3 py-2 bg-slate-50 border border-slate-300 rounded-lg text-xs"
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* Signed PDFs Master Table */}
+          <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+            <div className="p-4 border-b border-slate-200 flex items-center justify-between">
+              <h4 className="text-sm font-bold text-slate-900 flex items-center gap-2">
+                <FileCheck2 className="w-4 h-4 text-indigo-700" />
+                <span>अखिल भारतीय हस्ताक्षरित रिपोर्ट सूची</span>
+              </h4>
+              <span className="text-xs text-slate-500 font-semibold">
+                प्रदर्शित: {officers.filter((o) => {
+                  if (signedCircleFilter !== 'all' && o.circleOfficeCode !== signedCircleFilter) return false;
+                  const rep = quarterReports.find((r) => r.officerStaffNo === o.staffNo);
+                  if (signedStatusFilter === 'uploaded' && !rep?.signedPdf) return false;
+                  if (signedStatusFilter === 'verified' && rep?.signedPdf?.status !== 'प्र.का. द्वारा सत्यापित') return false;
+                  if (signedStatusFilter === 'pending' && rep?.signedPdf) return false;
+                  if (signedSearch) {
+                    const q = signedSearch.toLowerCase();
+                    return o.name.toLowerCase().includes(q) || o.staffNo.includes(q) || o.primaryOfficeName.toLowerCase().includes(q);
+                  }
+                  return true;
+                }).length} कार्यालय
+              </span>
+            </div>
+
+            <div className="overflow-x-auto">
+              <table className="w-full text-left text-xs border-collapse">
+                <thead>
+                  <tr className="bg-slate-100 text-slate-700 font-bold border-b border-slate-200">
+                    <th className="p-3 w-12 text-center">क्र.</th>
+                    <th className="p-3">अंचल कार्यालय (Circle)</th>
+                    <th className="p-3">पदस्थापन कार्यालय (Office)</th>
+                    <th className="p-3">राजभाषा अधिकारी (OL Officer)</th>
+                    <th className="p-3">कार्यालय प्रमुख हस्ताक्षरकर्ता (Head Signatory)</th>
+                    <th className="p-3 text-center">हस्ताक्षर दिनांक</th>
+                    <th className="p-3">अपलोड विवरण</th>
+                    <th className="p-3 text-center">प्र.का. सत्यापन स्थिति</th>
+                    <th className="p-3 text-center">कार्रवाई (Actions)</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-200">
+                  {officers
+                    .filter((off) => {
+                      if (signedCircleFilter !== 'all' && off.circleOfficeCode !== signedCircleFilter) return false;
+                      const rep = quarterReports.find((r) => r.officerStaffNo === off.staffNo);
+                      if (signedStatusFilter === 'uploaded' && !rep?.signedPdf) return false;
+                      if (signedStatusFilter === 'verified' && rep?.signedPdf?.status !== 'प्र.का. द्वारा सत्यापित') return false;
+                      if (signedStatusFilter === 'pending' && rep?.signedPdf) return false;
+                      if (signedSearch) {
+                        const q = signedSearch.toLowerCase();
+                        return off.name.toLowerCase().includes(q) || off.staffNo.includes(q) || off.primaryOfficeName.toLowerCase().includes(q);
+                      }
+                      return true;
+                    })
+                    .map((off, index) => {
+                      const rep = quarterReports.find((r) => r.officerStaffNo === off.staffNo);
+                      const spdf = rep?.signedPdf;
+
+                      return (
+                        <tr
+                          key={off.id}
+                          className={`hover:bg-blue-50/40 transition ${
+                            spdf ? 'bg-white' : 'bg-slate-50/50 text-slate-500'
+                          }`}
+                        >
+                          <td className="p-3 text-center font-bold text-slate-600">
+                            {index + 1}
+                          </td>
+
+                          <td className="p-3">
+                            <span className="font-bold text-blue-950 block">{off.circleOfficeName}</span>
+                            <span className="text-[10px] text-slate-500 font-mono">कोड: {off.circleOfficeCode}</span>
+                          </td>
+
+                          <td className="p-3">
+                            <span className="font-bold text-slate-900 block">{off.primaryOfficeName}</span>
+                            {off.concurrentOffices.length > 0 && (
+                              <span className="text-[10px] text-amber-800 bg-amber-50 px-1.5 py-0.2 rounded border border-amber-200 font-semibold inline-block mt-0.5">
+                                + {off.concurrentOffices.length} समवर्ती प्रभार
+                              </span>
+                            )}
+                          </td>
+
+                          <td className="p-3">
+                            <span className="font-bold text-slate-900 block">{off.name}</span>
+                            <div className="flex items-center gap-1.5 text-[10px] text-slate-500">
+                              <span className="font-mono font-semibold">कर्म. सं: {off.staffNo}</span>
+                              <span>•</span>
+                              <span>{off.designation}</span>
+                            </div>
+                          </td>
+
+                          <td className="p-3">
+                            {spdf ? (
+                              <div>
+                                <span className="font-bold text-slate-900 block">
+                                  {spdf.signedByHeadName || 'कार्यालय प्रमुख'}
+                                </span>
+                                <span className="text-[10px] text-slate-500">
+                                  रा.भा. हस्ताक्षरकर्ता: {spdf.signedByOfficerName}
+                                </span>
+                              </div>
+                            ) : (
+                              <span className="text-slate-400 italic">लंबित</span>
+                            )}
+                          </td>
+
+                          <td className="p-3 text-center">
+                            {spdf?.signatureDate ? (
+                              <span className="font-semibold text-slate-800 bg-slate-100 px-2 py-0.5 rounded">
+                                {spdf.signatureDate}
+                              </span>
+                            ) : (
+                              <span className="text-slate-400">-</span>
+                            )}
+                          </td>
+
+                          <td className="p-3">
+                            {spdf ? (
+                              <div className="text-[11px] space-y-0.5">
+                                <span className="font-semibold text-indigo-950 block truncate max-w-[140px]" title={spdf.fileName}>
+                                  {spdf.fileName}
+                                </span>
+                                <span className="text-[10px] text-slate-500 block">
+                                  {spdf.uploadedAt ? new Date(spdf.uploadedAt).toLocaleDateString('hi-IN') : '-'}
+                                  {spdf.fileSize ? ` (${(spdf.fileSize / 1024).toFixed(0)} KB)` : ''}
+                                </span>
+                              </div>
+                            ) : (
+                              <span className="text-amber-700 bg-amber-50 px-2 py-0.5 rounded text-[11px] font-semibold border border-amber-200">
+                                अप्रस्तुत
+                              </span>
+                            )}
+                          </td>
+
+                          <td className="p-3 text-center">
+                            {spdf ? (
+                              <div className="space-y-1">
+                                <span
+                                  className={`inline-block px-2.5 py-0.5 rounded-full text-[10px] font-bold ${
+                                    spdf.status === 'प्र.का. द्वारा सत्यापित'
+                                      ? 'bg-emerald-100 text-emerald-900 border border-emerald-300'
+                                      : spdf.status === 'संशोधन अपेक्षित'
+                                      ? 'bg-rose-100 text-rose-900 border border-rose-300'
+                                      : 'bg-blue-100 text-blue-900 border border-blue-300'
+                                  }`}
+                                >
+                                  {spdf.status}
+                                </span>
+                                {spdf.verifiedByHOAt && (
+                                  <span className="text-[9px] text-emerald-700 block font-medium">
+                                    सत्यापित: {new Date(spdf.verifiedByHOAt).toLocaleDateString('hi-IN')}
+                                  </span>
+                                )}
+                              </div>
+                            ) : (
+                              <span className="text-slate-400 text-[11px] italic">
+                                ⏳ प्रति प्रतीक्षित
+                              </span>
+                            )}
+                          </td>
+
+                          <td className="p-3 text-center">
+                            {spdf && rep ? (
+                              <div className="flex items-center justify-center gap-1.5">
+                                <button
+                                  onClick={() => setSelectedSignedReport(rep)}
+                                  className="px-2.5 py-1 bg-indigo-50 hover:bg-indigo-100 text-indigo-900 rounded font-bold text-[11px] inline-flex items-center gap-1 cursor-pointer border border-indigo-200 transition"
+                                  title="हस्ताक्षरित पीडीएफ खोलें व जांचें"
+                                >
+                                  <Eye className="w-3.5 h-3.5 text-indigo-700" />
+                                  <span>जांचें</span>
+                                </button>
+
+                                {spdf.status !== 'प्र.का. द्वारा सत्यापित' && (
+                                  <button
+                                    onClick={() => {
+                                      setSelectedSignedReport(rep);
+                                    }}
+                                    className="px-2 py-1 bg-emerald-600 hover:bg-emerald-700 text-white rounded font-bold text-[10px] inline-flex items-center gap-1 cursor-pointer shadow-xs transition"
+                                    title="सत्यापित करें"
+                                  >
+                                    <CheckCircle2 className="w-3 h-3" />
+                                    <span>सत्यापित</span>
+                                  </button>
+                                )}
+                              </div>
+                            ) : rep ? (
+                              <button
+                                onClick={() => onViewPrintable(rep)}
+                                className="px-2 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded text-[10px] font-semibold cursor-pointer"
+                                title="डिजिटल रिपोर्ट देखें"
+                              >
+                                डिजिटल ड्राफ्ट देखें
+                              </button>
+                            ) : (
+                              <span className="text-slate-400 text-[10px]">-</span>
+                            )}
+                          </td>
+                        </tr>
+                      );
+                    })}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Full Signed PDF Viewer & Verification Modal (Exclusively for Head Office) */}
+      <SignedPdfViewerModal
+        isOpen={!!selectedSignedReport}
+        onClose={() => setSelectedSignedReport(null)}
+        record={selectedSignedReport?.signedPdf || null}
+        officeName={selectedSignedReport?.primaryOfficeName}
+        circleName={selectedSignedReport?.circleOfficeName}
+        quarter={selectedSignedReport?.quarter}
+        canVerify={true}
+        onVerify={handleVerifySignedPdf}
+      />
     </div>
   );
 };

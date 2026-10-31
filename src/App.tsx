@@ -461,6 +461,7 @@ export default function App() {
             }}
             transferHistory={transferHistory}
             onExecuteTransfer={handleExecuteTransfer}
+            onSaveReport={handleSaveReport}
           />
         )}
 
