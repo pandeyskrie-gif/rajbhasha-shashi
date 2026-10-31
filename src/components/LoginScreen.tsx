@@ -2,21 +2,19 @@ import React, { useState } from 'react';
 import { Officer } from '../types';
 import { CIRCLE_OFFICES } from '../data/seedData';
 import { CanaraLogo } from './CanaraLogo';
-import { verifyCredentials, AuthUser, getOfficeDpCode } from '../utils/auth';
+import { verifyCredentials, AuthUser } from '../utils/auth';
 import { 
   Lock, 
   User, 
   Building2, 
   ArrowRight,
   ShieldCheck,
-  CheckCircle2,
   AlertCircle,
   HelpCircle,
-  Briefcase,
-  Layers,
-  Sparkles,
-  ExternalLink,
-  ChevronRight
+  Eye,
+  EyeOff,
+  ChevronRight,
+  KeyRound
 } from 'lucide-react';
 
 interface Props {
@@ -32,12 +30,19 @@ export const LoginScreen: React.FC<Props> = ({ officers, onLoginSuccess, initial
   const [selectedStaffNo, setSelectedStaffNo] = useState<string>(initialLoginId);
   const [selectedCircleCode, setSelectedCircleCode] = useState<string>('7690');
   const [password, setPassword] = useState('');
+  const [showPasswordText, setShowPasswordText] = useState(false);
   const [manualLoginId, setManualLoginId] = useState(initialLoginId);
   const [errorMsg, setErrorMsg] = useState('');
-  const [showPasswordDetails, setShowPasswordDetails] = useState(false);
 
   // Find currently selected officer from dropdown
   const selectedOfficer = officers.find((o) => o.staffNo === selectedStaffNo) || null;
+
+  // Switch tabs and clean sensitive state
+  const handleTabSwitch = (tab: LoginTab) => {
+    setActiveTab(tab);
+    setPassword('');
+    setErrorMsg('');
+  };
 
   // Handler 1: Log in as selected RO Officer
   const handleOfficerLogin = (e?: React.FormEvent) => {
@@ -49,10 +54,12 @@ export const LoginScreen: React.FC<Props> = ({ officers, onLoginSuccess, initial
       return;
     }
 
-    const primaryDp = getOfficeDpCode(selectedOfficer.primaryOfficeName, selectedOfficer.circleOfficeCode);
-    const passToUse = password.trim() ? password.trim() : `${selectedOfficer.staffNo}@${primaryDp}`;
+    if (!password.trim()) {
+      setErrorMsg('कृपया अपना पासवर्ड दर्ज करें (Please enter your password)।');
+      return;
+    }
 
-    const res = verifyCredentials(selectedOfficer.staffNo, passToUse, officers);
+    const res = verifyCredentials(selectedOfficer.staffNo, password.trim(), officers);
     if (res.success && res.user) {
       onLoginSuccess(res.user);
     } else {
@@ -71,23 +78,34 @@ export const LoginScreen: React.FC<Props> = ({ officers, onLoginSuccess, initial
       return;
     }
 
-    const passToUse = password.trim() ? password.trim() : `${matchedCircle.code}@${matchedCircle.code}`;
-    const res = verifyCredentials(matchedCircle.code, passToUse, officers);
+    if (!password.trim()) {
+      setErrorMsg('कृपया अंचल पासवर्ड दर्ज करें (Please enter Circle Password)।');
+      return;
+    }
+
+    const res = verifyCredentials(matchedCircle.code, password.trim(), officers);
     if (res.success && res.user) {
       onLoginSuccess(res.user);
     } else {
-      setErrorMsg(res.message || 'अंचल लॉगिन विफल।');
+      setErrorMsg(res.message || 'अंचल लॉगिन विफल। कृपया पासवर्ड जांचें।');
     }
   };
 
   // Handler 3: Log in as Head Office (HO)
-  const handleHoLogin = () => {
+  const handleHoLogin = (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
     setErrorMsg('');
-    const res = verifyCredentials('401', '401@401', officers);
+
+    if (!password.trim()) {
+      setErrorMsg('कृपया प्रधान कार्यालय पासवर्ड दर्ज करें (Please enter HO Password)।');
+      return;
+    }
+
+    const res = verifyCredentials('401', password.trim(), officers);
     if (res.success && res.user) {
       onLoginSuccess(res.user);
     } else {
-      setErrorMsg('प्रधान कार्यालय लॉगिन विफल।');
+      setErrorMsg('प्रधान कार्यालय लॉगिन विफल। कृपया सही पासवर्ड दर्ज करें।');
     }
   };
 
@@ -101,6 +119,11 @@ export const LoginScreen: React.FC<Props> = ({ officers, onLoginSuccess, initial
       return;
     }
 
+    if (!password.trim()) {
+      setErrorMsg('कृपया अपना पासवर्ड दर्ज करें।');
+      return;
+    }
+
     const res = verifyCredentials(manualLoginId.trim(), password.trim(), officers);
     if (res.success && res.user) {
       onLoginSuccess(res.user);
@@ -109,15 +132,11 @@ export const LoginScreen: React.FC<Props> = ({ officers, onLoginSuccess, initial
     }
   };
 
-  // When officer dropdown changes, reset password state or set default
+  // When officer dropdown changes, NEVER auto-fill password. Keep it empty so user must type.
   const handleSelectOfficer = (staffNo: string) => {
     setSelectedStaffNo(staffNo);
     setErrorMsg('');
-    const off = officers.find((o) => o.staffNo === staffNo);
-    if (off) {
-      const dp = getOfficeDpCode(off.primaryOfficeName, off.circleOfficeCode);
-      setPassword(`${off.staffNo}@${dp}`);
-    }
+    setPassword(''); // Strictly clear password on selection for security
   };
 
   return (
@@ -135,7 +154,7 @@ export const LoginScreen: React.FC<Props> = ({ officers, onLoginSuccess, initial
               राजभाषा तिमाही रिपोर्ट एवं प्रबंधन प्रणाली
             </h2>
             <p className="text-xs text-blue-200 mt-1 font-medium">
-              एकल सुरक्षित पोर्टल लिंक (Single Access Link for RO, CO & HO)
+              सुरक्षित आंतरिक पोर्टल (Role-Based Access)
             </p>
           </div>
         </div>
@@ -144,10 +163,7 @@ export const LoginScreen: React.FC<Props> = ({ officers, onLoginSuccess, initial
         <div className="grid grid-cols-3 bg-slate-100 border-b border-slate-200 p-1.5 text-xs font-bold">
           <button
             type="button"
-            onClick={() => {
-              setActiveTab('officer');
-              setErrorMsg('');
-            }}
+            onClick={() => handleTabSwitch('officer')}
             className={`py-2 px-2 rounded-lg transition flex items-center justify-center gap-1.5 cursor-pointer ${
               activeTab === 'officer'
                 ? 'bg-blue-700 text-white shadow-sm font-black'
@@ -160,10 +176,7 @@ export const LoginScreen: React.FC<Props> = ({ officers, onLoginSuccess, initial
 
           <button
             type="button"
-            onClick={() => {
-              setActiveTab('co');
-              setErrorMsg('');
-            }}
+            onClick={() => handleTabSwitch('co')}
             className={`py-2 px-2 rounded-lg transition flex items-center justify-center gap-1.5 cursor-pointer ${
               activeTab === 'co'
                 ? 'bg-blue-700 text-white shadow-sm font-black'
@@ -176,10 +189,7 @@ export const LoginScreen: React.FC<Props> = ({ officers, onLoginSuccess, initial
 
           <button
             type="button"
-            onClick={() => {
-              setActiveTab('ho');
-              setErrorMsg('');
-            }}
+            onClick={() => handleTabSwitch('ho')}
             className={`py-2 px-2 rounded-lg transition flex items-center justify-center gap-1.5 cursor-pointer ${
               activeTab === 'ho'
                 ? 'bg-blue-700 text-white shadow-sm font-black'
@@ -221,9 +231,6 @@ export const LoginScreen: React.FC<Props> = ({ officers, onLoginSuccess, initial
                     </option>
                   ))}
                 </select>
-                <p className="text-[11px] text-blue-700">
-                  सूची में से अपना नाम चुनते ही आपका संबंधित पोर्टल तुरंत तैयार हो जाएगा।
-                </p>
               </div>
 
               {/* Officer details card preview when an officer is selected */}
@@ -246,34 +253,47 @@ export const LoginScreen: React.FC<Props> = ({ officers, onLoginSuccess, initial
                 </div>
               )}
 
-              {/* Password Section */}
-              <div className="space-y-1">
-                <div className="flex items-center justify-between">
-                  <label className="font-semibold text-slate-700 text-xs flex items-center gap-1">
+              {/* Password Section: Kept empty by default with format Hint only */}
+              <div className="space-y-1.5">
+                <label className="font-semibold text-slate-700 text-xs flex items-center justify-between">
+                  <span className="flex items-center gap-1">
                     <Lock className="w-3.5 h-3.5 text-slate-400" />
-                    <span>पासवर्ड (Password):</span>
-                  </label>
+                    <span>पासवर्ड दर्ज करें (Enter Password):</span>
+                  </span>
+                  <span className="text-[10px] text-red-500 font-semibold">* अनिवार्य (Required)</span>
+                </label>
+
+                <div className="relative">
+                  <input
+                    type={showPasswordText ? 'text' : 'password'}
+                    required
+                    placeholder="अपना पासवर्ड यहाँ टाइप करें..."
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    className="w-full pl-3 pr-10 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-xs font-semibold text-slate-900 focus:bg-white focus:ring-2 focus:ring-blue-600 outline-none"
+                  />
                   <button
                     type="button"
-                    onClick={() => setShowPasswordDetails(!showPasswordDetails)}
-                    className="text-[11px] text-blue-700 hover:text-blue-900 font-medium inline-flex items-center gap-1 cursor-pointer"
+                    onClick={() => setShowPasswordText(!showPasswordText)}
+                    className="absolute right-3 top-2.5 text-slate-400 hover:text-slate-700"
+                    title={showPasswordText ? 'पासवर्ड छिपाएं' : 'पासवर्ड देखें'}
                   >
-                    <HelpCircle className="w-3 h-3" />
-                    <span>{showPasswordDetails ? 'छिपाएं' : 'पासवर्ड विकल्प'}</span>
+                    {showPasswordText ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                   </button>
                 </div>
-                <input
-                  type="password"
-                  placeholder="कर्मचारी संख्या अथवा StaffNumber@DPcode"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl text-xs font-semibold text-slate-900 focus:bg-white focus:ring-2 focus:ring-blue-600 outline-none"
-                />
-                {showPasswordDetails && (
-                  <div className="p-2.5 bg-slate-100 rounded-lg text-[10px] text-slate-600 space-y-1">
-                    <p>मान्य पासवर्ड: <span className="font-mono text-blue-900 font-bold">कर्मचारी_संख्या</span>, <span className="font-mono text-blue-900 font-bold">संख्या@डीपी_कोड</span> (उदा. {selectedOfficer?.staffNo || '869679'}@6974) अथवा <span className="font-mono text-blue-900 font-bold">canara@123</span></p>
+
+                {/* Password Hint Card (Does NOT expose the secret password value) */}
+                <div className="p-2.5 bg-amber-50/80 border border-amber-200 rounded-xl text-[11px] text-amber-900 space-y-1">
+                  <div className="font-bold flex items-center gap-1 text-amber-950">
+                    <KeyRound className="w-3.5 h-3.5 text-amber-600" />
+                    <span>पासवर्ड संकेत (Password Hint):</span>
                   </div>
-                )}
+                  <ul className="list-disc list-inside space-y-0.5 text-[10.5px] text-amber-800">
+                    <li>आपकी <strong>कर्मचारी संख्या (Staff Number)</strong></li>
+                    <li>अथवा <strong>कर्मचारी_संख्या@मूल कार्यालय DP कोड</strong> (उदा. StaffNo@DPCode)</li>
+                    <li>अथवा बैंक डिफ़ॉल्ट पासवर्ड <span className="font-mono font-bold">canara@123</span></li>
+                  </ul>
+                </div>
               </div>
 
               {/* Action Button */}
@@ -301,7 +321,11 @@ export const LoginScreen: React.FC<Props> = ({ officers, onLoginSuccess, initial
                 </label>
                 <select
                   value={selectedCircleCode}
-                  onChange={(e) => setSelectedCircleCode(e.target.value)}
+                  onChange={(e) => {
+                    setSelectedCircleCode(e.target.value);
+                    setPassword('');
+                    setErrorMsg('');
+                  }}
                   className="w-full p-2.5 bg-white border-2 border-indigo-400 rounded-xl text-xs font-bold text-slate-800 outline-none focus:ring-2 focus:ring-indigo-600 cursor-pointer shadow-xs"
                 >
                   {CIRCLE_OFFICES.map((c) => (
@@ -310,23 +334,44 @@ export const LoginScreen: React.FC<Props> = ({ officers, onLoginSuccess, initial
                     </option>
                   ))}
                 </select>
-                <p className="text-[11px] text-indigo-700">
-                  अंचल कार्यालय स्तर पर आप अपनी CO रिपोर्ट भरने के साथ-साथ अधीनस्थ ROs की रिपोर्ट समीक्षा व समेकन कर सकेंगे।
-                </p>
               </div>
 
-              <div className="space-y-1">
-                <label className="font-semibold text-slate-700 text-xs flex items-center gap-1">
-                  <Lock className="w-3.5 h-3.5 text-slate-400" />
-                  <span>अंचल पासवर्ड (Circle Password / DP Code):</span>
+              <div className="space-y-1.5">
+                <label className="font-semibold text-slate-700 text-xs flex items-center justify-between">
+                  <span className="flex items-center gap-1">
+                    <Lock className="w-3.5 h-3.5 text-slate-400" />
+                    <span>अंचल पासवर्ड दर्ज करें (Enter Circle Password):</span>
+                  </span>
+                  <span className="text-[10px] text-red-500 font-semibold">* अनिवार्य</span>
                 </label>
-                <input
-                  type="password"
-                  placeholder={`अंचल कोड (उदा. ${selectedCircleCode} अथवा ${selectedCircleCode}@${selectedCircleCode})`}
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl text-xs font-semibold text-slate-900 focus:bg-white focus:ring-2 focus:ring-indigo-600 outline-none"
-                />
+
+                <div className="relative">
+                  <input
+                    type={showPasswordText ? 'text' : 'password'}
+                    required
+                    placeholder="अंचल पासवर्ड यहाँ टाइप करें..."
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    className="w-full pl-3 pr-10 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-xs font-semibold text-slate-900 focus:bg-white focus:ring-2 focus:ring-indigo-600 outline-none"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPasswordText(!showPasswordText)}
+                    className="absolute right-3 top-2.5 text-slate-400 hover:text-slate-700"
+                  >
+                    {showPasswordText ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  </button>
+                </div>
+
+                <div className="p-2.5 bg-indigo-50 border border-indigo-200 rounded-xl text-[11px] text-indigo-900 space-y-1">
+                  <div className="font-bold flex items-center gap-1 text-indigo-950">
+                    <KeyRound className="w-3.5 h-3.5 text-indigo-600" />
+                    <span>पासवर्ड संकेत (Hint):</span>
+                  </div>
+                  <p className="text-[10.5px] text-indigo-800">
+                    अंचल कोड (उदा. <strong>{selectedCircleCode}</strong>) अथवा <strong>{selectedCircleCode}@{selectedCircleCode}</strong> अथवा <strong>canara@{selectedCircleCode}</strong>
+                  </p>
+                </div>
               </div>
 
               <button
@@ -343,7 +388,7 @@ export const LoginScreen: React.FC<Props> = ({ officers, onLoginSuccess, initial
 
           {/* TAB 3: HEAD OFFICE (HO) LOGIN */}
           {activeTab === 'ho' && (
-            <div className="space-y-4 text-xs">
+            <form onSubmit={handleHoLogin} className="space-y-4 text-xs">
               <div className="bg-emerald-50/80 p-4 rounded-xl border border-emerald-300 text-center space-y-2">
                 <div className="w-12 h-12 mx-auto rounded-full bg-emerald-100 flex items-center justify-center text-emerald-800">
                   <ShieldCheck className="w-6 h-6" />
@@ -356,15 +401,52 @@ export const LoginScreen: React.FC<Props> = ({ officers, onLoginSuccess, initial
                 </p>
               </div>
 
+              <div className="space-y-1.5">
+                <label className="font-semibold text-slate-700 text-xs flex items-center justify-between">
+                  <span className="flex items-center gap-1">
+                    <Lock className="w-3.5 h-3.5 text-slate-400" />
+                    <span>प्रधान कार्यालय पासवर्ड (HO Password):</span>
+                  </span>
+                  <span className="text-[10px] text-red-500 font-semibold">* अनिवार्य</span>
+                </label>
+
+                <div className="relative">
+                  <input
+                    type={showPasswordText ? 'text' : 'password'}
+                    required
+                    placeholder="HO पासवर्ड दर्ज करें..."
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    className="w-full pl-3 pr-10 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-xs font-semibold text-slate-900 focus:bg-white focus:ring-2 focus:ring-emerald-600 outline-none"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPasswordText(!showPasswordText)}
+                    className="absolute right-3 top-2.5 text-slate-400 hover:text-slate-700"
+                  >
+                    {showPasswordText ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  </button>
+                </div>
+
+                <div className="p-2.5 bg-emerald-50 border border-emerald-200 rounded-xl text-[11px] text-emerald-900 space-y-1">
+                  <div className="font-bold flex items-center gap-1 text-emerald-950">
+                    <KeyRound className="w-3.5 h-3.5 text-emerald-600" />
+                    <span>पासवर्ड संकेत (Hint):</span>
+                  </div>
+                  <p className="text-[10.5px] text-emerald-800">
+                    HO कोड (उदा. <strong>401</strong>) अथवा <strong>401@401</strong> अथवा <strong>admin</strong>
+                  </p>
+                </div>
+              </div>
+
               <button
-                type="button"
-                onClick={handleHoLogin}
+                type="submit"
                 className="w-full py-3 bg-gradient-to-r from-emerald-700 to-teal-800 hover:from-emerald-800 hover:to-teal-900 text-white font-black text-sm rounded-xl shadow-md transition flex items-center justify-center gap-2 cursor-pointer"
               >
                 <span>👉 प्रधान कार्यालय (HO) डैशबोर्ड खोलें</span>
                 <ArrowRight className="w-4 h-4" />
               </button>
-            </div>
+            </form>
           )}
 
           {/* Fallback Manual Option Toggle */}
@@ -372,10 +454,7 @@ export const LoginScreen: React.FC<Props> = ({ officers, onLoginSuccess, initial
             {activeTab !== 'manual' ? (
               <button
                 type="button"
-                onClick={() => {
-                  setActiveTab('manual');
-                  setErrorMsg('');
-                }}
+                onClick={() => handleTabSwitch('manual')}
                 className="text-[11px] text-blue-700 hover:text-blue-900 font-semibold inline-flex items-center gap-1 cursor-pointer"
               >
                 <span>कर्मचारी संख्या व पासवर्ड स्वयं टाइप करना चाहते हैं? यहाँ क्लिक करें</span>
@@ -409,14 +488,14 @@ export const LoginScreen: React.FC<Props> = ({ officers, onLoginSuccess, initial
                 <div className="flex gap-2">
                   <button
                     type="submit"
-                    className="flex-1 py-2 bg-blue-700 hover:bg-blue-800 text-white font-bold rounded-lg text-xs"
+                    className="flex-1 py-2 bg-blue-700 hover:bg-blue-800 text-white font-bold rounded-lg text-xs cursor-pointer"
                   >
                     लॉगिन करें
                   </button>
                   <button
                     type="button"
-                    onClick={() => setActiveTab('officer')}
-                    className="px-3 py-2 bg-slate-200 hover:bg-slate-300 text-slate-700 font-semibold rounded-lg text-xs"
+                    onClick={() => handleTabSwitch('officer')}
+                    className="px-3 py-2 bg-slate-200 hover:bg-slate-300 text-slate-700 font-semibold rounded-lg text-xs cursor-pointer"
                   >
                     वापस
                   </button>
@@ -428,7 +507,7 @@ export const LoginScreen: React.FC<Props> = ({ officers, onLoginSuccess, initial
 
         {/* Security Footer */}
         <div className="p-3 bg-slate-50 border-t border-slate-100 text-center text-[10px] text-slate-500 font-medium">
-          सुरक्षित सत्र • केनरा बैंक राजभाषा प्रबंधन प्रणाली • एकल यूआरएल प्रवेश
+          सुरक्षित सत्र • केनरा बैंक राजभाषा प्रबंधन प्रणाली • पासवर्ड सुरक्षा अनिवार्य
         </div>
       </div>
     </div>
