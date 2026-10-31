@@ -451,3 +451,40 @@ export async function exportHOAllIndiaToGoogleSheets(
     { title: 'समस्त_तिमाही_रिपोर्ट', rows: submissionsRows },
   ]);
 }
+
+/**
+ * 4. Automatic Sync: Syncs an officer's report to Google Sheets on Save
+ */
+export async function syncReportToMasterGoogleSheet(
+  report: QuarterlyReport,
+  officer?: Officer | null
+): Promise<GoogleSheetsExportResult> {
+  const MASTER_KEY = `cb_rajbhasha_sheet_${report.officerStaffNo || 'master'}_${report.quarter}`;
+  
+  // Creates or updates the officer's formatted Google Spreadsheet with all tables
+  const exportRes = await exportOfficerReportToGoogleSheets(report, officer);
+  
+  try {
+    localStorage.setItem(
+      MASTER_KEY,
+      JSON.stringify({
+        id: exportRes.spreadsheetId,
+        url: exportRes.spreadsheetUrl,
+        title: exportRes.title,
+        lastSyncedAt: new Date().toISOString(),
+      })
+    );
+    localStorage.setItem('cb_rajbhasha_last_synced_url', exportRes.spreadsheetUrl);
+  } catch (e) {}
+
+  return exportRes;
+}
+
+export function getLastSyncedGoogleSheetUrl(): string | null {
+  try {
+    return localStorage.getItem('cb_rajbhasha_last_synced_url');
+  } catch (e) {
+    return null;
+  }
+}
+

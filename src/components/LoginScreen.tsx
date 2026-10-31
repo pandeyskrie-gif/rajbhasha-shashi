@@ -505,9 +505,17 @@ export const LoginScreen: React.FC<Props> = ({ officers, onLoginSuccess, initial
           </div>
         </div>
 
-        {/* Security Footer */}
-        <div className="p-3 bg-slate-50 border-t border-slate-100 text-center text-[10px] text-slate-500 font-medium">
-          सुरक्षित सत्र • केनरा बैंक राजभाषा प्रबंधन प्रणाली • पासवर्ड सुरक्षा अनिवार्य
+        {/* Security & Designer/Developer Credit Footer */}
+        <div className="p-3 bg-gradient-to-r from-blue-950 via-slate-900 to-indigo-950 border-t border-slate-700 text-center space-y-1">
+          <div className="text-[11px] font-bold text-amber-300 flex items-center justify-center gap-1.5 flex-wrap">
+            <span>✨ Designed and Developed by:</span>
+            <span className="text-white font-extrabold tracking-wide">
+              Shashi Kant Pandey, Senior Manager (OL), CIBM, Manipal
+            </span>
+          </div>
+          <div className="text-[10px] text-slate-400">
+            सुरक्षित सत्र • केनरा बैंक राजभाषा प्रबंधन प्रणाली
+          </div>
         </div>
       </div>
     </div>

@@ -593,14 +593,19 @@ export default function App() {
       />
 
       {/* Global Footer */}
-      <footer className="bg-slate-900 text-slate-400 text-xs py-4 px-6 border-t border-slate-800 text-center">
-        <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-2">
-          <span>
-            © केनरा बैंक - राजभाषा अनुभाग, प्रधान कार्यालय, बेंगलूरु | Canara Bank Official Language Section
-          </span>
-          <span className="text-[11px] text-slate-500">
-            राजभाषा तिमाही रिपोर्ट संकलन, समेकन, अनुवाद व शाखा भ्रमण ट्रैकिंग प्रणाली
-          </span>
+      <footer className="bg-slate-900 text-slate-300 text-xs py-4 px-6 border-t border-slate-800 text-center">
+        <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-3">
+          <div className="flex items-center gap-2 text-slate-400">
+            <span>
+              © केनरा बैंक - राजभाषा अनुभाग, प्रधान कार्यालय, बेंगलूरु | Canara Bank Official Language Section
+            </span>
+          </div>
+          <div className="flex items-center gap-2 bg-gradient-to-r from-blue-950 to-indigo-950 px-3.5 py-1.5 rounded-lg border border-amber-500/40 shadow-xs">
+            <span className="text-amber-400 font-bold">✨ Designed and Developed by:</span>
+            <span className="text-white font-bold tracking-wide">
+              Shashi Kant Pandey, Senior Manager (OL), CIBM, Manipal
+            </span>
+          </div>
         </div>
       </footer>
     </div>

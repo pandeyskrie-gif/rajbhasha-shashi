@@ -99,6 +99,10 @@ export const Navbar: React.FC<Props> = ({
             <span className="bg-amber-400/20 text-amber-300 px-2 py-0.5 rounded text-[11px] font-mono border border-amber-400/30">
               सुरक्षित पोर्टल v2.6
             </span>
+            <span className="text-blue-300 hidden lg:inline">•</span>
+            <span className="text-amber-300 text-[11px] font-semibold hidden lg:inline">
+              ✨ Designed & Developed by Shashi Kant Pandey, Senior Manager (OL), CIBM, Manipal
+            </span>
           </div>
 
           {/* User Profile & Actions */}
