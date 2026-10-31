@@ -45,15 +45,15 @@ export const PrintableReport: React.FC<Props> = ({ report, onBack }) => {
 
             <button
               onClick={handlePrint}
-              className="inline-flex items-center gap-2 px-5 py-2 bg-blue-600 hover:bg-blue-700 text-white font-medium text-sm rounded-lg shadow-sm transition cursor-pointer"
+              className="inline-flex items-center gap-2 px-5 py-2 bg-sky-700 hover:bg-sky-800 text-white font-medium text-sm rounded-lg shadow-xs transition cursor-pointer"
             >
               <Printer className="w-4 h-4" />
-              प्रिंट / पीडीएफ सेव करें (Print / Save PDF)
+              <span>प्रिंट / पीडीएफ सेव करें (Print / Save PDF)</span>
             </button>
           </div>
         </div>
 
-        <div className="p-2.5 bg-blue-50 border border-blue-200 rounded-lg text-xs text-blue-900 flex items-center justify-between">
+        <div className="p-2.5 bg-sky-50 border border-sky-200 rounded-lg text-xs text-sky-950 flex items-center justify-between">
           <span>
             💡 <strong>प्रामाणिकता निर्देश:</strong> इस रिपोर्ट का प्रिंटआउट लेकर पृष्ठ के अंत में <strong>राजभाषा अधिकारी</strong> व <strong>कार्यालय प्रमुख</strong> के हस्ताक्षर व मुहर करवाएं, तत्पश्चात हस्ताक्षरित प्रति पोर्टल पर अपलोड करें।
           </span>
@@ -63,9 +63,9 @@ export const PrintableReport: React.FC<Props> = ({ report, onBack }) => {
       {/* Main Official Document Sheet */}
       <div className="max-w-4xl mx-auto bg-white p-8 md:p-12 shadow-xl print:shadow-none print:p-4 rounded-lg border border-slate-200 print:border-none print:w-full print:max-w-full">
         {/* Canara Bank Official Header Banner */}
-        <div className="border border-blue-900 bg-blue-700 text-white p-4 rounded mb-4 print:border-black flex items-center justify-between px-6">
+        <div className="border border-sky-800 bg-sky-700 text-white p-4 rounded mb-4 print:border-black flex items-center justify-between px-6">
           <CanaraLogo size="lg" theme="dark" />
-          <div className="border-l border-blue-400 pl-4 text-right hidden sm:block">
+          <div className="border-l border-sky-400 pl-4 text-right hidden sm:block">
             <span className="text-xs bg-amber-400 text-blue-950 px-2.5 py-0.5 rounded font-bold text-[11px] block shadow-xs">
               राजभाषा अनुभाग
             </span>

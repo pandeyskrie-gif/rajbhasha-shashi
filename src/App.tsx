@@ -379,7 +379,7 @@ export default function App() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-100/70 text-slate-800 flex flex-col font-sans">
+    <div className="min-h-screen bg-slate-50 text-slate-800 flex flex-col font-sans">
       {/* Navigation Header */}
       <Navbar
         activeRole={activeRole}
@@ -397,6 +397,8 @@ export default function App() {
         isGoogleConnected={isGoogleConnectedState}
         onOpenChangePassword={() => setShowChangePasswordModal(true)}
         onOpenCentralPasswords={() => setShowCentralPasswordModal(true)}
+        officers={officers}
+        onSelectOfficer={(off) => setCurrentOfficer(off)}
       />
 
       {/* Main Role-Specific View */}

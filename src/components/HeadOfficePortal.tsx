@@ -233,23 +233,23 @@ export const HeadOfficePortal: React.FC<Props> = ({
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 py-6 space-y-6">
       {/* Top Banner */}
-      <div className="bg-gradient-to-r from-blue-900 via-blue-800 to-indigo-950 text-white rounded-2xl p-6 shadow-md border-b-4 border-amber-400">
+      <div className="bg-gradient-to-r from-sky-50 via-white to-blue-50 text-slate-800 rounded-2xl p-6 shadow-xs border border-sky-200 border-b-4 border-b-amber-400">
         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
           <div className="flex items-start gap-3">
-            <div className="w-12 h-12 bg-amber-400 text-blue-950 rounded-xl flex items-center justify-center font-black text-2xl shadow">
+            <div className="w-12 h-12 bg-sky-600 text-white rounded-xl flex items-center justify-center font-black text-2xl shadow-xs">
               ▲
             </div>
             <div>
               <div className="flex items-center gap-2 flex-wrap">
-                <span className="text-xs bg-amber-400/20 text-amber-300 font-bold px-2.5 py-0.5 rounded border border-amber-400/30">
+                <span className="text-xs bg-amber-100 text-amber-900 font-bold px-2.5 py-0.5 rounded border border-amber-300">
                   प्रधान कार्यालय (Head Office - HO)
                 </span>
-                <span className="text-xs text-blue-200">समीक्षा तिमाही: <strong>{selectedQuarter}</strong></span>
+                <span className="text-xs text-slate-600">समीक्षा तिमाही: <strong>{selectedQuarter}</strong></span>
               </div>
-              <h2 className="text-2xl font-black tracking-tight mt-1">
+              <h2 className="text-2xl font-black tracking-tight mt-1 text-slate-900">
                 राजभाषा अनुभाग - अखिल भारतीय समेकित डैशबोर्ड
               </h2>
-              <p className="text-xs text-blue-200 mt-0.5">
+              <p className="text-xs text-slate-600 mt-0.5">
                 केनरा बैंक के सभी 28 अंचल कार्यालयों, क्षेत्रीय कार्यालयों व राजभाषा अधिकारियों का केंद्रीय अनुपालन, अनुवाद ट्रैकिंग व स्थानांतरण प्रबंधन
               </p>
             </div>
@@ -258,7 +258,7 @@ export const HeadOfficePortal: React.FC<Props> = ({
           <div className="flex items-center gap-2">
             <button
               onClick={() => exportHeadOfficeMasterToExcel(quarterReports, officers)}
-              className="px-4 py-2.5 bg-amber-400 hover:bg-amber-300 text-blue-950 font-extrabold text-xs rounded-xl shadow transition inline-flex items-center gap-2 cursor-pointer"
+              className="px-4 py-2.5 bg-amber-400 hover:bg-amber-300 text-slate-950 font-extrabold text-xs rounded-xl shadow-xs transition inline-flex items-center gap-2 cursor-pointer"
             >
               <FileSpreadsheet className="w-4 h-4" />
               <span>अखिल भारतीय मास्टर एक्सेल (.xlsx) डाउनलोड</span>
@@ -267,13 +267,13 @@ export const HeadOfficePortal: React.FC<Props> = ({
         </div>
 
         {/* HO Internal Tabs */}
-        <div className="flex items-center gap-2 border-t border-blue-700/60 mt-5 pt-3 overflow-x-auto text-xs font-bold scrollbar-none">
+        <div className="flex items-center gap-2 border-t border-sky-200 mt-5 pt-3 overflow-x-auto text-xs font-bold scrollbar-none">
           <button
             onClick={() => setActiveHoTab('dashboard')}
             className={`px-4 py-2 rounded-lg transition whitespace-nowrap cursor-pointer flex items-center gap-1.5 ${
               activeHoTab === 'dashboard'
-                ? 'bg-amber-400 text-blue-950 shadow-md'
-                : 'text-blue-100 hover:bg-blue-800'
+                ? 'bg-sky-700 text-white shadow-xs font-bold'
+                : 'bg-white text-slate-700 hover:bg-slate-100 border border-slate-200'
             }`}
           >
             <ShieldCheck className="w-4 h-4" />
@@ -284,8 +284,8 @@ export const HeadOfficePortal: React.FC<Props> = ({
             onClick={() => setActiveHoTab('transfer')}
             className={`px-4 py-2 rounded-lg transition whitespace-nowrap cursor-pointer flex items-center gap-1.5 ${
               activeHoTab === 'transfer'
-                ? 'bg-amber-400 text-blue-950 shadow-md'
-                : 'text-blue-100 hover:bg-blue-800'
+                ? 'bg-sky-700 text-white shadow-xs font-bold'
+                : 'bg-white text-slate-700 hover:bg-slate-100 border border-slate-200'
             }`}
           >
             <ArrowRightLeft className="w-4 h-4" />
@@ -299,8 +299,8 @@ export const HeadOfficePortal: React.FC<Props> = ({
             onClick={() => setActiveHoTab('translation')}
             className={`px-4 py-2 rounded-lg transition whitespace-nowrap cursor-pointer flex items-center gap-1.5 ${
               activeHoTab === 'translation'
-                ? 'bg-amber-400 text-blue-950 shadow-md'
-                : 'text-blue-100 hover:bg-blue-800'
+                ? 'bg-sky-700 text-white shadow-xs font-bold'
+                : 'bg-white text-slate-700 hover:bg-slate-100 border border-slate-200'
             }`}
           >
             <Languages className="w-4 h-4" />
@@ -311,8 +311,8 @@ export const HeadOfficePortal: React.FC<Props> = ({
             onClick={() => setActiveHoTab('visits')}
             className={`px-4 py-2 rounded-lg transition whitespace-nowrap cursor-pointer flex items-center gap-1.5 ${
               activeHoTab === 'visits'
-                ? 'bg-amber-400 text-blue-950 shadow-md'
-                : 'text-blue-100 hover:bg-blue-800'
+                ? 'bg-sky-700 text-white shadow-xs font-bold'
+                : 'bg-white text-slate-700 hover:bg-slate-100 border border-slate-200'
             }`}
           >
             <MapPin className="w-4 h-4" />
@@ -323,8 +323,8 @@ export const HeadOfficePortal: React.FC<Props> = ({
             onClick={() => setActiveHoTab('publications_tolic')}
             className={`px-4 py-2 rounded-lg transition whitespace-nowrap cursor-pointer flex items-center gap-1.5 ${
               activeHoTab === 'publications_tolic'
-                ? 'bg-amber-400 text-blue-950 shadow-md'
-                : 'text-blue-100 hover:bg-blue-800'
+                ? 'bg-sky-700 text-white shadow-xs font-bold'
+                : 'bg-white text-slate-700 hover:bg-slate-100 border border-slate-200'
             }`}
           >
             <BookOpen className="w-4 h-4" />
@@ -335,13 +335,13 @@ export const HeadOfficePortal: React.FC<Props> = ({
             onClick={() => setActiveHoTab('signed_pdfs')}
             className={`px-4 py-2 rounded-lg transition whitespace-nowrap cursor-pointer flex items-center gap-1.5 ${
               activeHoTab === 'signed_pdfs'
-                ? 'bg-amber-400 text-blue-950 shadow-md font-bold'
-                : 'text-blue-100 hover:bg-blue-800'
+                ? 'bg-sky-700 text-white shadow-xs font-bold'
+                : 'bg-white text-slate-700 hover:bg-slate-100 border border-slate-200'
             }`}
           >
             <FileCheck2 className="w-4 h-4" />
             <span>६. हस्ताक्षरित अनुमोदित रिपोर्टें (Signed PDFs - HO Exclusive)</span>
-            <span className="bg-indigo-950 text-amber-300 border border-amber-400/40 px-2 py-0.2 rounded-full text-[10px] font-mono font-bold">
+            <span className="bg-amber-100 text-amber-900 border border-amber-300 px-2 py-0.2 rounded-full text-[10px] font-mono font-bold">
               {totalSignedPdfReports} संलग्न
             </span>
           </button>

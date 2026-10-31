@@ -186,26 +186,26 @@ export const CircleOfficePortal: React.FC<Props> = ({
       </div>
 
       {/* Circle Office In-charge Personal Report Banner */}
-      <div className="bg-gradient-to-r from-blue-900 via-indigo-900 to-blue-950 text-white rounded-xl p-4 shadow-sm border border-blue-700 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+      <div className="bg-gradient-to-r from-sky-50 via-white to-blue-50 text-slate-800 rounded-xl p-4 shadow-xs border border-sky-200 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
         <div className="flex items-center gap-3">
-          <div className="w-11 h-11 rounded-xl bg-amber-400 text-blue-950 flex items-center justify-center font-black shrink-0 shadow">
+          <div className="w-11 h-11 rounded-xl bg-sky-600 text-white flex items-center justify-center font-black shrink-0 shadow-xs">
             <FileText className="w-6 h-6" />
           </div>
           <div>
             <div className="flex items-center gap-2 flex-wrap">
-              <span className="font-bold text-sm text-amber-300">
+              <span className="font-bold text-sm text-sky-950">
                 1. मेरी अंचल कार्यालय रिपोर्ट (CO & समवर्ती ROs)
               </span>
-              <span className="text-[10px] bg-indigo-500/40 text-blue-100 border border-indigo-400/40 px-2 py-0.5 rounded font-mono">
+              <span className="text-[10px] bg-sky-100 text-sky-900 border border-sky-300 px-2 py-0.5 rounded font-mono font-bold">
                 {coOfficer ? `${coOfficer.name} (${coOfficer.staffNo})` : currentCircle.name}
               </span>
               {coOfficer?.concurrentOffices && coOfficer.concurrentOffices.length > 0 && (
-                <span className="text-[10px] bg-amber-400/20 text-amber-200 border border-amber-400/30 px-2 py-0.5 rounded">
+                <span className="text-[10px] bg-amber-100 text-amber-900 border border-amber-300 px-2 py-0.5 rounded font-medium">
                   समवर्ती RO: {coOfficer.concurrentOffices.join(', ')}
                 </span>
               )}
             </div>
-            <p className="text-xs text-blue-200 mt-0.5">
+            <p className="text-xs text-slate-600 mt-0.5">
               अंचल कार्यालय व आवंटित समवर्ती RO की तिमाही रिपोर्ट (अनुवाद, बैठकें, शाखा भ्रमण, पत्रिका आदि) यहाँ भरें।
             </p>
           </div>
@@ -215,10 +215,10 @@ export const CircleOfficePortal: React.FC<Props> = ({
           <span
             className={`text-xs px-2.5 py-1 rounded-md font-bold border ${
               coReport?.status?.includes('स्वीकृत')
-                ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40'
+                ? 'bg-emerald-100 text-emerald-800 border-emerald-300'
                 : coReport?.status
-                ? 'bg-blue-500/20 text-blue-200 border-blue-500/40'
-                : 'bg-amber-500/20 text-amber-300 border-amber-500/40'
+                ? 'bg-sky-100 text-sky-800 border-sky-300'
+                : 'bg-amber-100 text-amber-900 border-amber-300'
             }`}
           >
             स्थिति: {coReport?.status || 'ड्राफ्ट (प्रतीक्षित)'}
@@ -228,7 +228,7 @@ export const CircleOfficePortal: React.FC<Props> = ({
             <button
               type="button"
               onClick={() => onEditOfficerReport(coOfficer)}
-              className="px-3.5 py-1.5 bg-amber-400 hover:bg-amber-300 text-blue-950 font-bold text-xs rounded-lg shadow transition flex items-center gap-1.5 cursor-pointer"
+              className="px-3.5 py-1.5 bg-amber-400 hover:bg-amber-300 text-slate-950 font-bold text-xs rounded-lg shadow-xs transition flex items-center gap-1.5 cursor-pointer"
             >
               <FileText className="w-3.5 h-3.5" />
               <span>अपनी रिपोर्ट भरें / संपादित करें</span>

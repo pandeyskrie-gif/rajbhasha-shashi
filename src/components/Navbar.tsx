@@ -40,6 +40,8 @@ interface Props {
   isGoogleConnected?: boolean;
   onOpenChangePassword?: () => void;
   onOpenCentralPasswords?: () => void;
+  officers?: Officer[];
+  onSelectOfficer?: (officer: Officer) => void;
 }
 
 export const Navbar: React.FC<Props> = ({
@@ -58,6 +60,8 @@ export const Navbar: React.FC<Props> = ({
   isGoogleConnected = false,
   onOpenChangePassword,
   onOpenCentralPasswords,
+  officers = [],
+  onSelectOfficer,
 }) => {
   const [copied, setCopied] = useState(false);
   const [showQuarterModal, setShowQuarterModal] = useState(false);
@@ -91,132 +95,156 @@ export const Navbar: React.FC<Props> = ({
   const isCO = currentUser?.role === 'co';
   const isOfficer = currentUser?.role === 'officer';
 
+  // CO in-charge officer profile identification
+  const coOfficer =
+    officers.find((o) => currentUser?.staffNo && o.staffNo === currentUser.staffNo) ||
+    officers.find(
+      (o) =>
+        currentUser?.circleOfficeCode &&
+        o.circleOfficeCode === currentUser.circleOfficeCode &&
+        o.primaryOfficeType === 'CO'
+    ) ||
+    officers.find(
+      (o) => currentUser?.circleOfficeCode && o.circleOfficeCode === currentUser.circleOfficeCode
+    ) ||
+    null;
+
+  // Active check whether CO is currently viewing/editing a subordinate RO report
+  const isEditingSubordinateRO =
+    isCO &&
+    activeRole === 'officer' &&
+    !!selectedOfficer &&
+    !!coOfficer &&
+    selectedOfficer.staffNo !== coOfficer.staffNo;
+
   return (
     <>
-      <header className="bg-gradient-to-r from-blue-900 via-blue-800 to-indigo-900 text-white shadow-lg sticky top-0 z-50 border-b-4 border-amber-400">
+      <header className="bg-white text-slate-800 shadow-sm sticky top-0 z-50 border-b-2 border-amber-400">
         {/* Top micro bar */}
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 py-2 flex flex-wrap items-center justify-between border-b border-blue-700/60 text-xs">
-          <div className="flex items-center gap-2">
-            <span className="font-semibold text-amber-300">केनरा बैंक / Canara Bank</span>
-            <span className="text-blue-300">•</span>
-            <span className="text-slate-200">राजभाषा अनुभाग</span>
-            <span className="text-blue-300">•</span>
-            <span className="bg-amber-400/20 text-amber-300 px-2 py-0.5 rounded text-[11px] font-mono border border-amber-400/30">
-              सुरक्षित पोर्टल v2.6
-            </span>
-            <span className="text-blue-300 hidden lg:inline">•</span>
-            <span className="text-amber-300 text-[11px] font-semibold hidden lg:inline">
-              ✨ Designed & Developed by Shashi Kant Pandey, Senior Manager (OL), CIBM, Manipal
-            </span>
-          </div>
+        <div className="bg-slate-800 text-slate-200 border-b border-slate-700 py-1.5 px-4 sm:px-6 text-xs">
+          <div className="max-w-7xl mx-auto flex flex-wrap items-center justify-between gap-2">
+            <div className="flex items-center gap-2">
+              <span className="font-semibold text-amber-300">केनरा बैंक / Canara Bank</span>
+              <span className="text-slate-400">•</span>
+              <span className="text-slate-200">राजभाषा अनुभाग</span>
+              <span className="text-slate-400">•</span>
+              <span className="bg-amber-400/20 text-amber-300 px-2 py-0.5 rounded text-[11px] font-mono border border-amber-400/30">
+                सुरक्षित पोर्टल v2.7
+              </span>
+              <span className="text-slate-400 hidden lg:inline">•</span>
+              <span className="text-amber-300 text-[11px] font-semibold hidden lg:inline">
+                ✨ Designed & Developed by Shashi Kant Pandey, Senior Manager (OL), CIBM, Manipal
+              </span>
+            </div>
 
-          {/* User Profile & Actions */}
-          <div className="flex items-center gap-2.5 mt-1 sm:mt-0">
-            {currentUser && (
-              <div className="flex items-center gap-2 bg-blue-950/80 px-2.5 py-1 rounded-lg border border-blue-700">
-                <div className="w-5 h-5 rounded-full bg-amber-400 text-blue-950 font-black text-[10px] flex items-center justify-center">
-                  {currentUser.name.slice(0, 1)}
-                </div>
-                <div className="leading-tight">
-                  <span className="font-bold text-amber-300 text-[11px] block">{currentUser.name}</span>
-                  <span className="text-[10px] text-blue-200 block">
-                    {currentUser.role === 'officer'
-                      ? `RO अधिकारी (${currentUser.staffNo})`
-                      : currentUser.role === 'co'
-                      ? `अंचल: ${currentUser.circleOfficeName}`
-                      : 'प्रधान कार्यालय (HO)'}
-                  </span>
-                </div>
-                {onOpenChangePassword && (
+            {/* User Profile & Actions */}
+            <div className="flex items-center gap-2">
+              {currentUser && (
+                <div className="flex items-center gap-2 bg-slate-700/80 px-2.5 py-1 rounded-lg border border-slate-600">
+                  <div className="w-5 h-5 rounded-full bg-amber-400 text-slate-950 font-black text-[10px] flex items-center justify-center">
+                    {currentUser.name.slice(0, 1)}
+                  </div>
+                  <div className="leading-tight">
+                    <span className="font-bold text-amber-300 text-[11px] block">{currentUser.name}</span>
+                    <span className="text-[10px] text-slate-300 block">
+                      {currentUser.role === 'officer'
+                        ? `RO अधिकारी (${currentUser.staffNo})`
+                        : currentUser.role === 'co'
+                        ? `अंचल: ${currentUser.circleOfficeName}`
+                        : 'प्रधान कार्यालय (HO)'}
+                    </span>
+                  </div>
+                  {onOpenChangePassword && (
+                    <button
+                      type="button"
+                      onClick={onOpenChangePassword}
+                      className="p-1 text-slate-300 hover:text-amber-300 hover:bg-white/10 rounded transition cursor-pointer ml-1"
+                      title="अपना पासवर्ड बदलें (Change Password)"
+                    >
+                      <KeyRound className="w-3.5 h-3.5" />
+                    </button>
+                  )}
                   <button
-                    type="button"
-                    onClick={onOpenChangePassword}
-                    className="p-1 text-slate-300 hover:text-amber-300 hover:bg-white/10 rounded transition cursor-pointer ml-1"
-                    title="अपना पासवर्ड बदलें (Change Password)"
+                    onClick={onLogout}
+                    className="p-1 text-slate-300 hover:text-red-300 hover:bg-red-950/50 rounded transition cursor-pointer"
+                    title="लॉगआउट करें (Sign Out)"
                   >
-                    <KeyRound className="w-3.5 h-3.5" />
+                    <LogOut className="w-3.5 h-3.5" />
                   </button>
-                )}
+                </div>
+              )}
+
+              {/* Central Password Management (For HO Admin / Shashi Kant Pandey) */}
+              {isHO && onOpenCentralPasswords && (
                 <button
-                  onClick={onLogout}
-                  className="p-1 text-slate-300 hover:text-red-300 hover:bg-red-950/50 rounded transition cursor-pointer"
-                  title="लॉगआउट करें (Sign Out)"
+                  type="button"
+                  onClick={onOpenCentralPasswords}
+                  className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-amber-400 hover:bg-amber-300 text-slate-950 font-bold rounded-md text-xs shadow-xs transition cursor-pointer"
+                  title="सभी अधिकारियों का व्यक्तिगत गुप्त पासवर्ड देखें, बदलें व साझा करें"
                 >
-                  <LogOut className="w-3.5 h-3.5" />
+                  <KeyRound className="w-3.5 h-3.5 text-slate-950" />
+                  <span>पासवर्ड प्रबंधन</span>
                 </button>
-              </div>
-            )}
+              )}
 
-            {/* Central Password Management (For HO Admin / Shashi Kant Pandey) */}
-            {isHO && onOpenCentralPasswords && (
+              {/* Single Universal Share Link Button for RO, CO & HO */}
               <button
-                type="button"
-                onClick={onOpenCentralPasswords}
-                className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-amber-400 hover:bg-amber-300 text-blue-950 font-bold rounded-md text-xs shadow-xs transition cursor-pointer"
-                title="सभी अधिकारियों का व्यक्तिगत गुप्त पासवर्ड देखें, बदलें व साझा करें"
+                onClick={copySingleUniversalLink}
+                className="inline-flex items-center gap-1.5 px-3 py-1 bg-amber-400 hover:bg-amber-300 text-slate-950 font-bold rounded-md text-xs shadow-xs transition cursor-pointer"
+                title="एकल पोर्टल लिंक कॉपी करें (Single access link for all RO, CO & HO)"
               >
-                <KeyRound className="w-3.5 h-3.5 text-blue-950" />
-                <span>पासवर्ड प्रबंधन</span>
+                {copied ? <Check className="w-3.5 h-3.5 text-emerald-950 font-black" /> : <Share2 className="w-3.5 h-3.5" />}
+                <span>{copied ? 'लिंक कॉपी हुआ!' : 'पोर्टल लिंक शेयर करें'}</span>
               </button>
-            )}
 
-            {/* Single Universal Share Link Button for RO, CO & HO */}
-            <button
-              onClick={copySingleUniversalLink}
-              className="inline-flex items-center gap-1.5 px-3 py-1 bg-amber-500 hover:bg-amber-400 text-blue-950 font-bold rounded-md text-xs shadow-sm transition cursor-pointer"
-              title="एकल पोर्टल लिंक कॉपी करें (Single access link for all RO, CO & HO)"
-            >
-              {copied ? <Check className="w-3.5 h-3.5 text-emerald-950 font-black" /> : <Share2 className="w-3.5 h-3.5" />}
-              <span>{copied ? 'लिंक कॉपी हुआ!' : 'पोर्टल लिंक शेयर करें'}</span>
-            </button>
-
-            {/* Google Sheets Integration Button */}
-            {onOpenGoogleSheets && (
-              <button
-                onClick={onOpenGoogleSheets}
-                className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-emerald-600/90 hover:bg-emerald-500 text-white font-bold rounded-md text-xs shadow-xs transition cursor-pointer border border-emerald-400/50"
-                title="Google Sheets के साथ डेटा सिंक या एक्सपोर्ट करें"
-              >
-                <FileSpreadsheet className="w-3.5 h-3.5 text-emerald-200" />
-                <span>गूगल शीट्स</span>
-                {isGoogleConnected && (
-                  <span className="w-2 h-2 rounded-full bg-emerald-300 ring-2 ring-emerald-800 animate-pulse" title="Google Connected"></span>
-                )}
-              </button>
-            )}
-
-            {/* Backup */}
-            {isHO && (
-              <>
+              {/* Google Sheets Integration Button */}
+              {onOpenGoogleSheets && (
                 <button
-                  onClick={onBackupExport}
-                  className="inline-flex items-center gap-1 px-2.5 py-1 bg-blue-950/60 hover:bg-blue-950 text-slate-200 hover:text-white rounded text-xs border border-blue-700 transition"
-                  title="डेटा बैकअप डाउनलोड करें"
+                  onClick={onOpenGoogleSheets}
+                  className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-md text-xs shadow-xs transition cursor-pointer"
+                  title="Google Sheets के साथ डेटा सिंक या एक्सपोर्ट करें"
                 >
-                  <Download className="w-3 h-3" />
-                  <span>बैकअप</span>
+                  <FileSpreadsheet className="w-3.5 h-3.5 text-emerald-100" />
+                  <span>गूगल शीट्स</span>
+                  {isGoogleConnected && (
+                    <span className="w-2 h-2 rounded-full bg-emerald-300 ring-2 ring-emerald-800 animate-pulse" title="Google Connected"></span>
+                  )}
                 </button>
-                <label className="inline-flex items-center gap-1 px-2.5 py-1 bg-blue-950/60 hover:bg-blue-950 text-slate-200 hover:text-white rounded text-xs border border-blue-700 transition cursor-pointer">
-                  <Upload className="w-3 h-3" />
-                  <span>रिस्टोर</span>
-                  <input type="file" accept=".json" onChange={onBackupImport} className="hidden" />
-                </label>
-              </>
-            )}
+              )}
+
+              {/* Backup */}
+              {isHO && (
+                <>
+                  <button
+                    onClick={onBackupExport}
+                    className="inline-flex items-center gap-1 px-2.5 py-1 bg-slate-700 hover:bg-slate-600 text-slate-200 hover:text-white rounded text-xs border border-slate-600 transition cursor-pointer"
+                    title="डेटा बैकअप डाउनलोड करें"
+                  >
+                    <Download className="w-3 h-3" />
+                    <span>बैकअप</span>
+                  </button>
+                  <label className="inline-flex items-center gap-1 px-2.5 py-1 bg-slate-700 hover:bg-slate-600 text-slate-200 hover:text-white rounded text-xs border border-slate-600 transition cursor-pointer">
+                    <Upload className="w-3 h-3" />
+                    <span>रिस्टोर</span>
+                    <input type="file" accept=".json" onChange={onBackupImport} className="hidden" />
+                  </label>
+                </>
+              )}
+            </div>
           </div>
         </div>
 
         {/* Main Bar with Official Canara Bank Logo */}
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 py-3 flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 py-3 flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white">
           {/* Official Canara Bank Logo */}
           <div className="flex items-center">
             <CanaraLogo size="md" theme="dark" />
           </div>
 
           {/* Quarter & Date Select Controls */}
-          <div className="flex items-center gap-2 bg-blue-950/70 p-2 rounded-xl border border-blue-600/80 shadow-inner flex-wrap">
-            <div className="flex items-center gap-1.5 text-xs text-amber-300 font-bold">
-              <Calendar className="w-4 h-4 text-amber-400" />
+          <div className="flex items-center gap-2 bg-slate-50 p-1.5 rounded-xl border border-slate-300 shadow-xs flex-wrap">
+            <div className="flex items-center gap-1.5 text-xs text-sky-800 font-bold">
+              <Calendar className="w-4 h-4 text-sky-600" />
               <span className="hidden sm:inline">समीक्षा तिमाही:</span>
             </div>
 
@@ -231,15 +259,15 @@ export const Navbar: React.FC<Props> = ({
                   setSelectedQuarter(e.target.value);
                 }
               }}
-              className="bg-blue-900 text-amber-300 font-bold text-xs rounded-lg px-2.5 py-1.5 outline-none border border-blue-500 focus:border-amber-400 cursor-pointer max-w-[210px] truncate"
+              className="bg-white text-slate-800 font-bold text-xs rounded-lg px-2.5 py-1.5 outline-none border border-slate-300 focus:border-sky-600 cursor-pointer max-w-[220px] truncate"
             >
               {multiYearQuarters.map((q) => (
-                <option key={q.val} value={q.val} className="bg-slate-900 text-white">
+                <option key={q.val} value={q.val} className="text-slate-800">
                   {q.label}
                 </option>
               ))}
               {!multiYearQuarters.some((q) => q.val === selectedQuarter) && (
-                <option value={selectedQuarter} className="bg-slate-900 text-amber-300">
+                <option value={selectedQuarter} className="text-sky-800 font-bold">
                   {selectedQuarter} (कस्टम)
                 </option>
               )}
@@ -249,7 +277,7 @@ export const Navbar: React.FC<Props> = ({
             <button
               type="button"
               onClick={() => setShowQuarterModal(true)}
-              className="px-3 py-1.5 bg-amber-400 hover:bg-amber-300 text-blue-950 font-bold text-xs rounded-lg shadow-sm transition inline-flex items-center gap-1 cursor-pointer"
+              className="px-3 py-1.5 bg-amber-400 hover:bg-amber-300 text-slate-950 font-bold text-xs rounded-lg shadow-xs transition inline-flex items-center gap-1 cursor-pointer"
               title="विशिष्ट वर्ष, तिमाही अथवा कस्टम तारीख (Date Range) चुनें"
             >
               <Clock className="w-3.5 h-3.5" />
@@ -259,16 +287,16 @@ export const Navbar: React.FC<Props> = ({
         </div>
 
         {/* Role Bar Enforcing Strict Boundary */}
-        <div className="bg-blue-950/90 px-4 sm:px-6 py-2 border-t border-blue-800">
-          <div className="max-w-7xl mx-auto flex items-center justify-between overflow-x-auto pb-1 sm:pb-0 scrollbar-none">
+        <div className="bg-slate-50/95 px-4 sm:px-6 py-2 border-t border-slate-200 border-b border-slate-200 text-slate-700">
+          <div className="max-w-7xl mx-auto flex items-center justify-between overflow-x-auto pb-1 sm:pb-0 scrollbar-none gap-2">
             {/* If logged in as RO Officer */}
             {isOfficer && (
               <div className="flex items-center gap-2 text-xs">
-                <span className="w-2.5 h-2.5 rounded-full bg-emerald-400"></span>
-                <span className="font-bold text-amber-300">
+                <span className="w-2.5 h-2.5 rounded-full bg-emerald-500"></span>
+                <span className="font-bold text-sky-900">
                   अधिकृत स्तर: क्षेत्रीय राजभाषा अधिकारी
                 </span>
-                <span className="text-slate-300">
+                <span className="text-slate-600">
                   ({currentUser.name} — केवल {currentUser.officeName} एवं समवर्ती ROs का संपादन अधिकार)
                 </span>
               </div>
@@ -277,46 +305,66 @@ export const Navbar: React.FC<Props> = ({
             {/* If logged in as CO: Enable both My Report (CO & Concurrent RO) and Subordinate RO Consolidation */}
             {isCO && (
               <div className="flex items-center justify-between w-full flex-wrap gap-2 py-0.5">
-                <div className="flex items-center gap-1.5 sm:gap-2">
-                  <span className="text-[11px] font-semibold text-blue-300 uppercase tracking-wider mr-1 hidden sm:inline">
+                <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap">
+                  <span className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider mr-1 hidden sm:inline">
                     अंचल स्तर:
                   </span>
 
                   {/* Tab 1: Fill / Edit My CO & Concurrent RO Report */}
                   <button
-                    onClick={() => setActiveRole('officer')}
-                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-semibold transition cursor-pointer whitespace-nowrap ${
-                      activeRole === 'officer'
-                        ? 'bg-amber-400 text-blue-950 shadow-md font-bold'
-                        : 'text-blue-100 hover:bg-blue-800/80 bg-blue-900/60'
+                    onClick={() => {
+                      if (coOfficer && onSelectOfficer) {
+                        onSelectOfficer(coOfficer);
+                      }
+                      setActiveRole('officer');
+                    }}
+                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition cursor-pointer whitespace-nowrap ${
+                      activeRole === 'officer' && !isEditingSubordinateRO
+                        ? 'bg-sky-700 text-white shadow-xs font-bold'
+                        : 'text-slate-700 hover:bg-slate-200/80 bg-white border border-slate-300'
                     }`}
-                    title="अपनी अंचल कार्यालय एवं समवर्ती RO की रिपोर्ट भरें या संपादित करें"
+                    title={`अपनी अंचल कार्यालय (${coOfficer?.name || currentUser.name}) की रिपोर्ट भरें या संपादित करें`}
                   >
                     <FileText className="w-3.5 h-3.5" />
-                    <span>1. मेरी रिपोर्ट (CO व समवर्ती RO फॉर्म)</span>
+                    <span>1. मेरी अंचल रिपोर्ट ({coOfficer?.name ? coOfficer.name.split(' ')[0] : 'CO'})</span>
                   </button>
 
                   {/* Tab 2: Subordinate RO Consolidation & Review */}
                   <button
                     onClick={() => setActiveRole('co')}
-                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-semibold transition cursor-pointer whitespace-nowrap ${
+                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition cursor-pointer whitespace-nowrap ${
                       activeRole === 'co'
-                        ? 'bg-amber-400 text-blue-950 shadow-md font-bold'
-                        : 'text-blue-100 hover:bg-blue-800/80 bg-blue-900/60'
+                        ? 'bg-sky-700 text-white shadow-xs font-bold'
+                        : 'text-slate-700 hover:bg-slate-200/80 bg-white border border-slate-300'
                     }`}
                     title="अपने क्षेत्राधीन क्षेत्रीय कार्यालयों (RO) की रिपोर्ट समीक्षा, समेकन व HO को प्रेषण"
                   >
                     <Building2 className="w-3.5 h-3.5" />
                     <span>2. अधीनस्थ RO समेकन व HO प्रेषण</span>
                   </button>
+
+                  {/* Tab 3: Prominent badge when CO is actively editing a subordinate RO report */}
+                  {isEditingSubordinateRO && (
+                    <div className="flex items-center gap-2 bg-amber-100 text-amber-950 border border-amber-300 px-3 py-1.5 rounded-lg text-xs font-bold shadow-xs">
+                      <span>✏️ अधीनस्थ RO संपादन: {selectedOfficer?.name} ({selectedOfficer?.primaryOfficeName})</span>
+                      <button
+                        type="button"
+                        onClick={() => setActiveRole('co')}
+                        className="px-2 py-0.5 bg-amber-400 hover:bg-amber-300 text-slate-950 rounded text-[10px] font-bold cursor-pointer"
+                        title="समेकन तालिका पर वापस जाएं"
+                      >
+                        ← समेकन पर वापस
+                      </button>
+                    </div>
+                  )}
                 </div>
 
                 <div className="flex items-center gap-2 text-xs">
-                  <span className="w-2.5 h-2.5 rounded-full bg-indigo-400"></span>
-                  <span className="font-bold text-amber-300">
+                  <span className="w-2.5 h-2.5 rounded-full bg-sky-600"></span>
+                  <span className="font-bold text-sky-900">
                     {currentUser.circleOfficeName}
                   </span>
-                  <span className="text-slate-300 hidden md:inline">
+                  <span className="text-slate-500 hidden md:inline">
                     ({currentUser.name})
                   </span>
                 </div>
@@ -325,17 +373,17 @@ export const Navbar: React.FC<Props> = ({
 
             {/* If logged in as Head Office or Admin: Full Multi-Level Navigation */}
             {isHO && (
-              <div className="flex items-center gap-1 sm:gap-2">
-                <span className="text-[11px] font-semibold text-blue-300 uppercase tracking-wider mr-2 hidden sm:inline">
+              <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap">
+                <span className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider mr-1 hidden sm:inline">
                   कार्य स्तर (Level):
                 </span>
 
                 <button
                   onClick={() => setActiveRole('officer')}
-                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-semibold transition cursor-pointer whitespace-nowrap ${
+                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition cursor-pointer whitespace-nowrap ${
                     activeRole === 'officer'
-                      ? 'bg-amber-400 text-blue-950 shadow-md font-bold'
-                      : 'text-blue-100 hover:bg-blue-800/80'
+                      ? 'bg-sky-700 text-white shadow-xs font-bold'
+                      : 'text-slate-700 hover:bg-slate-200/80 bg-white border border-slate-300'
                   }`}
                 >
                   <UserCheck className="w-3.5 h-3.5" />
@@ -344,10 +392,10 @@ export const Navbar: React.FC<Props> = ({
 
                 <button
                   onClick={() => setActiveRole('co')}
-                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-semibold transition cursor-pointer whitespace-nowrap ${
+                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition cursor-pointer whitespace-nowrap ${
                     activeRole === 'co'
-                      ? 'bg-amber-400 text-blue-950 shadow-md font-bold'
-                      : 'text-blue-100 hover:bg-blue-800/80'
+                      ? 'bg-sky-700 text-white shadow-xs font-bold'
+                      : 'text-slate-700 hover:bg-slate-200/80 bg-white border border-slate-300'
                   }`}
                 >
                   <Building2 className="w-3.5 h-3.5" />
@@ -356,10 +404,10 @@ export const Navbar: React.FC<Props> = ({
 
                 <button
                   onClick={() => setActiveRole('ho')}
-                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-semibold transition cursor-pointer whitespace-nowrap ${
+                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition cursor-pointer whitespace-nowrap ${
                     activeRole === 'ho'
-                      ? 'bg-amber-400 text-blue-950 shadow-md font-bold'
-                      : 'text-blue-100 hover:bg-blue-800/80'
+                      ? 'bg-sky-700 text-white shadow-xs font-bold'
+                      : 'text-slate-700 hover:bg-slate-200/80 bg-white border border-slate-300'
                   }`}
                 >
                   <ShieldCheck className="w-3.5 h-3.5" />
@@ -368,10 +416,10 @@ export const Navbar: React.FC<Props> = ({
 
                 <button
                   onClick={() => setActiveRole('admin')}
-                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-semibold transition cursor-pointer whitespace-nowrap ${
+                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition cursor-pointer whitespace-nowrap ${
                     activeRole === 'admin'
-                      ? 'bg-amber-400 text-blue-950 shadow-md font-bold'
-                      : 'text-blue-100 hover:bg-blue-800/80'
+                      ? 'bg-sky-700 text-white shadow-xs font-bold'
+                      : 'text-slate-700 hover:bg-slate-200/80 bg-white border border-slate-300'
                   }`}
                 >
                   <Sliders className="w-3.5 h-3.5" />
@@ -380,8 +428,8 @@ export const Navbar: React.FC<Props> = ({
               </div>
             )}
 
-            <div className="hidden lg:flex items-center gap-2 text-xs text-blue-300">
-              <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+            <div className="hidden lg:flex items-center gap-2 text-xs text-slate-500">
+              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
               <span>अवधि: {selectedQuarter}</span>
             </div>
           </div>

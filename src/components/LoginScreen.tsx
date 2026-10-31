@@ -140,20 +140,20 @@ export const LoginScreen: React.FC<Props> = ({ officers, onLoginSuccess, initial
   };
 
   return (
-    <div className="min-h-screen bg-slate-900 flex flex-col justify-center items-center p-4 relative overflow-hidden">
+    <div className="min-h-screen bg-gradient-to-br from-slate-100 via-sky-50 to-blue-50/50 text-slate-800 flex flex-col justify-center items-center p-4 relative overflow-hidden">
       {/* Background Decorative Rings */}
-      <div className="absolute -top-40 -right-40 w-96 h-96 rounded-full bg-blue-600/15 blur-3xl pointer-events-none"></div>
-      <div className="absolute -bottom-40 -left-40 w-96 h-96 rounded-full bg-amber-500/15 blur-3xl pointer-events-none"></div>
+      <div className="absolute -top-40 -right-40 w-96 h-96 rounded-full bg-sky-400/20 blur-3xl pointer-events-none"></div>
+      <div className="absolute -bottom-40 -left-40 w-96 h-96 rounded-full bg-amber-400/20 blur-3xl pointer-events-none"></div>
 
-      <div className="max-w-lg w-full bg-white rounded-2xl shadow-2xl border border-slate-200 overflow-hidden relative z-10">
+      <div className="max-w-lg w-full bg-white rounded-2xl shadow-xl border border-slate-200 overflow-hidden relative z-10">
         {/* Canara Bank Header Banner */}
-        <div className="bg-gradient-to-r from-blue-900 via-blue-800 to-indigo-900 p-6 text-white border-b-4 border-amber-400">
+        <div className="bg-gradient-to-r from-sky-800 via-blue-700 to-indigo-800 p-6 text-white border-b-4 border-amber-400">
           <div className="flex flex-col items-center text-center">
             <CanaraLogo size="md" theme="dark" className="justify-center mb-2" />
             <h2 className="text-lg font-black tracking-tight mt-2 text-amber-300">
               राजभाषा तिमाही रिपोर्ट एवं प्रबंधन प्रणाली
             </h2>
-            <p className="text-xs text-blue-200 mt-1 font-medium">
+            <p className="text-xs text-sky-100 mt-1 font-medium">
               सुरक्षित आंतरिक पोर्टल (Role-Based Access)
             </p>
           </div>
@@ -166,8 +166,8 @@ export const LoginScreen: React.FC<Props> = ({ officers, onLoginSuccess, initial
             onClick={() => handleTabSwitch('officer')}
             className={`py-2 px-2 rounded-lg transition flex items-center justify-center gap-1.5 cursor-pointer ${
               activeTab === 'officer'
-                ? 'bg-blue-700 text-white shadow-sm font-black'
-                : 'text-slate-600 hover:text-blue-900 hover:bg-slate-200/60'
+                ? 'bg-sky-700 text-white shadow-xs font-black'
+                : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/60'
             }`}
           >
             <User className="w-3.5 h-3.5" />
@@ -179,8 +179,8 @@ export const LoginScreen: React.FC<Props> = ({ officers, onLoginSuccess, initial
             onClick={() => handleTabSwitch('co')}
             className={`py-2 px-2 rounded-lg transition flex items-center justify-center gap-1.5 cursor-pointer ${
               activeTab === 'co'
-                ? 'bg-blue-700 text-white shadow-sm font-black'
-                : 'text-slate-600 hover:text-blue-900 hover:bg-slate-200/60'
+                ? 'bg-sky-700 text-white shadow-xs font-black'
+                : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/60'
             }`}
           >
             <Building2 className="w-3.5 h-3.5" />
@@ -192,8 +192,8 @@ export const LoginScreen: React.FC<Props> = ({ officers, onLoginSuccess, initial
             onClick={() => handleTabSwitch('ho')}
             className={`py-2 px-2 rounded-lg transition flex items-center justify-center gap-1.5 cursor-pointer ${
               activeTab === 'ho'
-                ? 'bg-blue-700 text-white shadow-sm font-black'
-                : 'text-slate-600 hover:text-blue-900 hover:bg-slate-200/60'
+                ? 'bg-sky-700 text-white shadow-xs font-black'
+                : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/60'
             }`}
           >
             <ShieldCheck className="w-3.5 h-3.5" />
@@ -507,14 +507,14 @@ export const LoginScreen: React.FC<Props> = ({ officers, onLoginSuccess, initial
         </div>
 
         {/* Security & Designer/Developer Credit Footer */}
-        <div className="p-3 bg-gradient-to-r from-blue-950 via-slate-900 to-indigo-950 border-t border-slate-700 text-center space-y-1">
+        <div className="p-3 bg-slate-800 border-t border-slate-700 text-center space-y-1">
           <div className="text-[11px] font-bold text-amber-300 flex items-center justify-center gap-1.5 flex-wrap">
             <span>✨ Designed and Developed by:</span>
             <span className="text-white font-extrabold tracking-wide">
               Shashi Kant Pandey, Senior Manager (OL), CIBM, Manipal
             </span>
           </div>
-          <div className="text-[10px] text-slate-400">
+          <div className="text-[10px] text-slate-300">
             सुरक्षित सत्र • केनरा बैंक राजभाषा प्रबंधन प्रणाली
           </div>
         </div>

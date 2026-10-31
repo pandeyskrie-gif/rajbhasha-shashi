@@ -595,36 +595,66 @@ export const OfficerPortal: React.FC<Props> = ({
     <div className="max-w-7xl mx-auto px-4 sm:px-6 py-6">
       {/* Circle Office In-charge Mode Navigation Banner */}
       {currentUser?.role === 'co' && (
-        <div className="mb-5 p-4 bg-gradient-to-r from-blue-900 via-indigo-900 to-blue-950 text-white rounded-xl shadow-sm border border-blue-700 flex flex-col md:flex-row items-start md:items-center justify-between gap-3">
+        <div
+          className={`mb-5 p-4 rounded-xl shadow-xs border flex flex-col md:flex-row items-start md:items-center justify-between gap-3 ${
+            currentOfficer.staffNo !== currentUser.staffNo
+              ? 'bg-gradient-to-r from-amber-50 via-white to-orange-50 border-2 border-amber-300 text-slate-800'
+              : 'bg-gradient-to-r from-sky-50 via-white to-blue-50 border border-sky-200 text-slate-800'
+          }`}
+        >
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-amber-400 text-blue-950 flex items-center justify-center font-bold shrink-0 shadow">
+            <div
+              className={`w-10 h-10 rounded-xl flex items-center justify-center font-bold shrink-0 shadow-xs ${
+                currentOfficer.staffNo !== currentUser.staffNo
+                  ? 'bg-amber-400 text-slate-950'
+                  : 'bg-sky-600 text-white'
+              }`}
+            >
               <Building className="w-5 h-5" />
             </div>
             <div>
               <div className="flex items-center gap-2 flex-wrap">
-                <span className="font-bold text-xs text-amber-300">
-                  अंचल राजभाषा प्रभारी मोड (Circle Office Edit Mode)
+                <span
+                  className={`font-bold text-xs px-2.5 py-0.5 rounded-full border ${
+                    currentOfficer.staffNo !== currentUser.staffNo
+                      ? 'bg-amber-200 text-amber-950 border-amber-300'
+                      : 'bg-sky-100 text-sky-900 border-sky-300'
+                  }`}
+                >
+                  {currentOfficer.staffNo !== currentUser.staffNo
+                    ? '✏️ अधीनस्थ RO संपादन मोड (Subordinate RO Edit Mode)'
+                    : '🏢 अंचल राजभाषा प्रभारी मोड (CO Personal Report)'}
                 </span>
-                <span className="text-[10px] bg-indigo-500/40 text-blue-100 border border-indigo-400/40 px-2 py-0.5 rounded font-mono">
-                  {currentUser.circleOfficeName}
+                <span className="text-[10px] bg-slate-100 text-slate-700 border border-slate-300 px-2 py-0.5 rounded font-mono font-bold">
+                  अंचल: {currentUser.circleOfficeName}
                 </span>
               </div>
-              <p className="text-xs text-blue-200 mt-0.5">
-                आप वर्तमान में <strong>{currentOfficer.name}</strong> ({currentOfficer.primaryOfficeName}) की रिपोर्ट भर / संपादित कर रहे हैं।
+              <p className="text-xs text-slate-700 mt-1">
+                {currentOfficer.staffNo !== currentUser.staffNo ? (
+                  <>
+                    आप वर्तमान में अधीनस्थ RO अधिकारी <strong className="text-slate-900 text-sm font-black">{currentOfficer.name}</strong> ({currentOfficer.primaryOfficeName} • कर्मचारी सं: {currentOfficer.staffNo}) की तिमाही रिपोर्ट भर / संपादित कर रहे हैं।
+                  </>
+                ) : (
+                  <>
+                    आप अपनी अंचल कार्यालय रिपोर्ट (CO व समवर्ती ROs) भर / संपादित कर रहे हैं।
+                  </>
+                )}
               </p>
             </div>
           </div>
 
-          {onBackToCODesk && (
-            <button
-              type="button"
-              onClick={onBackToCODesk}
-              className="px-3.5 py-1.5 bg-amber-400 hover:bg-amber-300 text-blue-950 font-bold text-xs rounded-lg shadow transition flex items-center gap-1.5 cursor-pointer shrink-0"
-            >
-              <Building className="w-3.5 h-3.5" />
-              <span>2. अधीनस्थ RO समेकन व HO प्रेषण तालिका पर जाएँ</span>
-            </button>
-          )}
+          <div className="flex items-center gap-2 shrink-0 flex-wrap">
+            {onBackToCODesk && (
+              <button
+                type="button"
+                onClick={onBackToCODesk}
+                className="px-3.5 py-2 bg-slate-800 hover:bg-slate-900 text-white font-bold text-xs rounded-lg shadow-xs transition flex items-center gap-1.5 cursor-pointer"
+              >
+                <Building className="w-3.5 h-3.5" />
+                <span>← अधीनस्थ RO समेकन तालिका पर लौटें</span>
+              </button>
+            )}
+          </div>
         </div>
       )}
 
@@ -770,20 +800,20 @@ export const OfficerPortal: React.FC<Props> = ({
       </datalist>
 
       {/* 6 Official Sections Quick-Jump & Direct Data Entry Access Banner */}
-      <div className="bg-gradient-to-r from-blue-900 via-indigo-900 to-slate-900 text-white rounded-xl p-4 mb-6 shadow-md border border-blue-800">
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 pb-3 border-b border-blue-800/60">
+      <div className="bg-gradient-to-r from-sky-50 via-white to-blue-50/60 text-slate-800 rounded-xl p-4 mb-6 shadow-xs border border-sky-200">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 pb-3 border-b border-sky-200">
           <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-lg bg-amber-400 text-blue-950 flex items-center justify-center font-bold">
+            <div className="w-8 h-8 rounded-lg bg-sky-600 text-white flex items-center justify-center font-bold">
               <Sparkles className="w-4 h-4" />
             </div>
             <div>
-              <h3 className="text-sm font-bold text-white flex items-center gap-2 flex-wrap">
+              <h3 className="text-sm font-bold text-slate-900 flex items-center gap-2 flex-wrap">
                 <span>आधिकारिक प्रपत्र के 6 विशिष्ट स्तम्भ (Direct Data Entry Shortcuts)</span>
-                <span className="text-[10px] bg-amber-400 text-blue-950 font-extrabold px-2 py-0.5 rounded-full uppercase">
+                <span className="text-[10px] bg-amber-400 text-slate-950 font-extrabold px-2 py-0.5 rounded-full uppercase">
                   PDF तालिका 10, 11, 12, 13 तथा भाग 14, 15
                 </span>
               </h3>
-              <p className="text-xs text-blue-200">
+              <p className="text-xs text-slate-600">
                 प्रत्येक राजभाषा अधिकारी अपने मूल व समवर्ती कार्यालयों हेतु नीचे दिए गए 6 स्तम्भों में सीधा डेटा दर्ज कर सकते हैं:
               </p>
             </div>
@@ -795,8 +825,8 @@ export const OfficerPortal: React.FC<Props> = ({
               onClick={() => setActiveTab(activeTab === 'all' ? 'basics' : 'all')}
               className={`text-xs px-3 py-1.5 rounded-lg font-bold border transition inline-flex items-center gap-1.5 cursor-pointer ${
                 activeTab === 'all'
-                  ? 'bg-amber-400 text-blue-950 border-amber-300 shadow-sm'
-                  : 'bg-blue-800/80 hover:bg-blue-700 text-white border-blue-600'
+                  ? 'bg-amber-400 text-slate-950 border-amber-300 shadow-xs'
+                  : 'bg-white hover:bg-slate-100 text-slate-700 border-slate-300'
               }`}
             >
               <Layers className="w-3.5 h-3.5" />
@@ -812,13 +842,13 @@ export const OfficerPortal: React.FC<Props> = ({
             onClick={() => setActiveTab('magazine')}
             className={`p-2.5 rounded-lg border text-left transition cursor-pointer flex flex-col justify-between ${
               activeTab === 'magazine'
-                ? 'bg-blue-600 border-amber-400 text-white shadow ring-2 ring-amber-400'
-                : 'bg-white/10 hover:bg-white/15 border-white/15 text-slate-100'
+                ? 'bg-sky-700 border-amber-400 text-white shadow-xs ring-2 ring-amber-400'
+                : 'bg-white hover:bg-sky-50/60 border-slate-200 text-slate-700 shadow-2xs'
             }`}
           >
             <div className="flex items-center justify-between mb-1">
-              <span className="text-[11px] font-bold text-amber-300">तालिका 10</span>
-              <span className="text-[10px] bg-blue-500/60 px-1.5 py-0.5 rounded font-mono font-bold">
+              <span className={`text-[11px] font-bold ${activeTab === 'magazine' ? 'text-amber-300' : 'text-sky-900'}`}>तालिका 10</span>
+              <span className={`text-[10px] px-1.5 py-0.5 rounded font-mono font-bold ${activeTab === 'magazine' ? 'bg-sky-900 text-white' : 'bg-sky-100 text-sky-800'}`}>
                 {reportData.magazines?.length || 0}
               </span>
             </div>
@@ -830,13 +860,13 @@ export const OfficerPortal: React.FC<Props> = ({
             onClick={() => setActiveTab('houseJournal')}
             className={`p-2.5 rounded-lg border text-left transition cursor-pointer flex flex-col justify-between ${
               activeTab === 'houseJournal'
-                ? 'bg-blue-600 border-amber-400 text-white shadow ring-2 ring-amber-400'
-                : 'bg-white/10 hover:bg-white/15 border-white/15 text-slate-100'
+                ? 'bg-sky-700 border-amber-400 text-white shadow-xs ring-2 ring-amber-400'
+                : 'bg-white hover:bg-sky-50/60 border-slate-200 text-slate-700 shadow-2xs'
             }`}
           >
             <div className="flex items-center justify-between mb-1">
-              <span className="text-[11px] font-bold text-amber-300">तालिका 11</span>
-              <span className="text-[10px] bg-blue-500/60 px-1.5 py-0.5 rounded font-mono font-bold">
+              <span className={`text-[11px] font-bold ${activeTab === 'houseJournal' ? 'text-amber-300' : 'text-sky-900'}`}>तालिका 11</span>
+              <span className={`text-[10px] px-1.5 py-0.5 rounded font-mono font-bold ${activeTab === 'houseJournal' ? 'bg-sky-900 text-white' : 'bg-sky-100 text-sky-800'}`}>
                 {reportData.houseJournals?.length || 0}
               </span>
             </div>
@@ -848,13 +878,13 @@ export const OfficerPortal: React.FC<Props> = ({
             onClick={() => setActiveTab('tolicMember')}
             className={`p-2.5 rounded-lg border text-left transition cursor-pointer flex flex-col justify-between ${
               activeTab === 'tolicMember'
-                ? 'bg-blue-600 border-amber-400 text-white shadow ring-2 ring-amber-400'
-                : 'bg-white/10 hover:bg-white/15 border-white/15 text-slate-100'
+                ? 'bg-sky-700 border-amber-400 text-white shadow-xs ring-2 ring-amber-400'
+                : 'bg-white hover:bg-sky-50/60 border-slate-200 text-slate-700 shadow-2xs'
             }`}
           >
             <div className="flex items-center justify-between mb-1">
-              <span className="text-[11px] font-bold text-amber-300">तालिका 12</span>
-              <span className="text-[10px] bg-blue-500/60 px-1.5 py-0.5 rounded font-mono font-bold">
+              <span className={`text-[11px] font-bold ${activeTab === 'tolicMember' ? 'text-amber-300' : 'text-sky-900'}`}>तालिका 12</span>
+              <span className={`text-[10px] px-1.5 py-0.5 rounded font-mono font-bold ${activeTab === 'tolicMember' ? 'bg-sky-900 text-white' : 'bg-sky-100 text-sky-800'}`}>
                 {reportData.tolicMembers?.length || 0}
               </span>
             </div>
@@ -866,13 +896,13 @@ export const OfficerPortal: React.FC<Props> = ({
             onClick={() => setActiveTab('tolicConvener')}
             className={`p-2.5 rounded-lg border text-left transition cursor-pointer flex flex-col justify-between ${
               activeTab === 'tolicConvener'
-                ? 'bg-blue-600 border-amber-400 text-white shadow ring-2 ring-amber-400'
-                : 'bg-white/10 hover:bg-white/15 border-white/15 text-slate-100'
+                ? 'bg-sky-700 border-amber-400 text-white shadow-xs ring-2 ring-amber-400'
+                : 'bg-white hover:bg-sky-50/60 border-slate-200 text-slate-700 shadow-2xs'
             }`}
           >
             <div className="flex items-center justify-between mb-1">
-              <span className="text-[11px] font-bold text-amber-300">तालिका 13</span>
-              <span className="text-[10px] bg-blue-500/60 px-1.5 py-0.5 rounded font-mono font-bold">
+              <span className={`text-[11px] font-bold ${activeTab === 'tolicConvener' ? 'text-amber-300' : 'text-sky-900'}`}>तालिका 13</span>
+              <span className={`text-[10px] px-1.5 py-0.5 rounded font-mono font-bold ${activeTab === 'tolicConvener' ? 'bg-sky-900 text-white' : 'bg-sky-100 text-sky-800'}`}>
                 {reportData.tolicConveners?.length || 0}
               </span>
             </div>
@@ -884,13 +914,13 @@ export const OfficerPortal: React.FC<Props> = ({
             onClick={() => setActiveTab('innovative')}
             className={`p-2.5 rounded-lg border text-left transition cursor-pointer flex flex-col justify-between ${
               activeTab === 'innovative'
-                ? 'bg-blue-600 border-amber-400 text-white shadow ring-2 ring-amber-400'
-                : 'bg-white/10 hover:bg-white/15 border-white/15 text-slate-100'
+                ? 'bg-sky-700 border-amber-400 text-white shadow-xs ring-2 ring-amber-400'
+                : 'bg-white hover:bg-sky-50/60 border-slate-200 text-slate-700 shadow-2xs'
             }`}
           >
             <div className="flex items-center justify-between mb-1">
-              <span className="text-[11px] font-bold text-amber-300">भाग 14</span>
-              <span className="text-[10px] bg-blue-500/60 px-1.5 py-0.5 rounded font-mono font-bold">
+              <span className={`text-[11px] font-bold ${activeTab === 'innovative' ? 'text-amber-300' : 'text-sky-900'}`}>भाग 14</span>
+              <span className={`text-[10px] px-1.5 py-0.5 rounded font-mono font-bold ${activeTab === 'innovative' ? 'bg-sky-900 text-white' : 'bg-sky-100 text-sky-800'}`}>
                 {(reportData.innovativeWorks || []).filter(Boolean).length}
               </span>
             </div>
@@ -902,13 +932,13 @@ export const OfficerPortal: React.FC<Props> = ({
             onClick={() => setActiveTab('awards')}
             className={`p-2.5 rounded-lg border text-left transition cursor-pointer flex flex-col justify-between ${
               activeTab === 'awards'
-                ? 'bg-blue-600 border-amber-400 text-white shadow ring-2 ring-amber-400'
-                : 'bg-white/10 hover:bg-white/15 border-white/15 text-slate-100'
+                ? 'bg-sky-700 border-amber-400 text-white shadow-xs ring-2 ring-amber-400'
+                : 'bg-white hover:bg-sky-50/60 border-slate-200 text-slate-700 shadow-2xs'
             }`}
           >
             <div className="flex items-center justify-between mb-1">
-              <span className="text-[11px] font-bold text-amber-300">भाग 15</span>
-              <span className="text-[10px] bg-blue-500/60 px-1.5 py-0.5 rounded font-mono font-bold">
+              <span className={`text-[11px] font-bold ${activeTab === 'awards' ? 'text-amber-300' : 'text-sky-900'}`}>भाग 15</span>
+              <span className={`text-[10px] px-1.5 py-0.5 rounded font-mono font-bold ${activeTab === 'awards' ? 'bg-sky-900 text-white' : 'bg-sky-100 text-sky-800'}`}>
                 {(reportData.specialAwards || []).filter(Boolean).length}
               </span>
             </div>
@@ -3317,26 +3347,26 @@ export const OfficerPortal: React.FC<Props> = ({
       {(activeTab === 'signed_pdf' || activeTab === 'custom' || activeTab === 'all') && (
         <div className="space-y-4 mb-6">
           {activeTab === 'signed_pdf' && (
-            <div className="bg-gradient-to-r from-blue-900 to-indigo-950 text-white p-5 rounded-2xl shadow-sm border border-blue-800 mb-4">
+            <div className="bg-gradient-to-r from-sky-50 via-white to-blue-50 text-slate-800 p-5 rounded-2xl shadow-xs border border-sky-200 mb-4">
               <div className="flex items-start gap-3">
-                <div className="w-10 h-10 rounded-xl bg-amber-400 text-blue-950 flex items-center justify-center font-bold shrink-0 shadow">
+                <div className="w-10 h-10 rounded-xl bg-sky-600 text-white flex items-center justify-center font-bold shrink-0 shadow-xs">
                   <FileCheck2 className="w-6 h-6" />
                 </div>
                 <div>
-                  <h3 className="text-base font-bold text-white">
+                  <h3 className="text-base font-bold text-slate-900">
                     हस्ताक्षरित एवं अनुमोदित रिपोर्ट अपलोड प्रक्रिया (3 सरल चरण)
                   </h3>
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mt-3 text-xs text-blue-100">
-                    <div className="p-3 bg-white/10 rounded-xl border border-white/10">
-                      <strong className="block text-amber-300 mb-1">१. रिपोर्ट प्रिंट / पीडीएफ लें:</strong>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mt-3 text-xs text-slate-700">
+                    <div className="p-3 bg-white rounded-xl border border-sky-100 shadow-2xs">
+                      <strong className="block text-sky-950 mb-1 font-bold">१. रिपोर्ट प्रिंट / पीडीएफ लें:</strong>
                       नीचे दिए गए "रिपोर्ट पूर्वावलोकन / पीडीएफ" बटन पर क्लिक करके तैयार रिपोर्ट का प्रिंट निकालें।
                     </div>
-                    <div className="p-3 bg-white/10 rounded-xl border border-white/10">
-                      <strong className="block text-amber-300 mb-1">२. हस्ताक्षर एवं मुहर करवाएँ:</strong>
+                    <div className="p-3 bg-white rounded-xl border border-sky-100 shadow-2xs">
+                      <strong className="block text-sky-950 mb-1 font-bold">२. हस्ताक्षर एवं मुहर करवाएँ:</strong>
                       अंतिम पृष्ठ पर राजभाषा अधिकारी एवं कार्यालय प्रमुख (RO/CO Head) के हस्ताक्षर व कार्यालय मुहर लगवाएं।
                     </div>
-                    <div className="p-3 bg-white/10 rounded-xl border border-white/10">
-                      <strong className="block text-amber-300 mb-1">३. यहाँ पीडीएफ अपलोड करें:</strong>
+                    <div className="p-3 bg-white rounded-xl border border-sky-100 shadow-2xs">
+                      <strong className="block text-sky-950 mb-1 font-bold">३. यहाँ पीडीएफ अपलोड करें:</strong>
                       हस्ताक्षरित प्रति को स्कैन कर नीचे अपलोड करें। यह प्रति केवल प्रधान कार्यालय (HO) स्तर पर ही जांची जा सकेगी।
                     </div>
                   </div>
@@ -3380,13 +3410,34 @@ export const OfficerPortal: React.FC<Props> = ({
           </button>
         </div>
 
-        <button
-          onClick={() => handleSave('अंचल को प्रस्तुत (Submitted to CO)')}
-          className="px-5 py-2.5 bg-gradient-to-r from-blue-700 to-indigo-700 hover:from-blue-800 hover:to-indigo-800 text-white rounded-lg text-xs font-extrabold inline-flex items-center gap-2 shadow-md transition cursor-pointer"
-        >
-          <Send className="w-4 h-4" />
-          <span>अंचल कार्यालय (CO) को प्रेषित करें</span>
-        </button>
+        {currentUser?.role === 'co' && currentOfficer.staffNo !== currentUser.staffNo ? (
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => handleSave('अंचल द्वारा स्वीकृत (Approved by CO)')}
+              className="px-5 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-extrabold inline-flex items-center gap-2 shadow-xs transition cursor-pointer"
+            >
+              <CheckCircle2 className="w-4 h-4" />
+              <span>अंचल स्तर पर अद्यतन व स्वीकृत करें (Approve & Update)</span>
+            </button>
+            {onBackToCODesk && (
+              <button
+                type="button"
+                onClick={onBackToCODesk}
+                className="px-4 py-2.5 bg-slate-800 hover:bg-slate-900 text-white rounded-lg text-xs font-bold inline-flex items-center gap-1.5 transition cursor-pointer"
+              >
+                <span>← समेकन तालिका पर लौटें</span>
+              </button>
+            )}
+          </div>
+        ) : (
+          <button
+            onClick={() => handleSave('अंचल को प्रस्तुत (Submitted to CO)')}
+            className="px-5 py-2.5 bg-sky-700 hover:bg-sky-800 text-white rounded-lg text-xs font-extrabold inline-flex items-center gap-2 shadow-xs transition cursor-pointer"
+          >
+            <Send className="w-4 h-4" />
+            <span>अंचल कार्यालय (CO) को प्रेषित करें</span>
+          </button>
+        )}
       </div>
     </div>
   );
