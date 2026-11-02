@@ -46,7 +46,8 @@ import {
   KeyRound,
   FileCheck2,
   Lock,
-  ShieldCheck
+  ShieldCheck,
+  AlertTriangle
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { exportSingleReportToExcel } from '../utils/excelExport';
@@ -324,9 +325,27 @@ export const OfficerPortal: React.FC<Props> = ({
     );
   }
 
+  const isLockedByHO =
+    reportData?.status === 'प्रधान कार्यालय द्वारा स्वीकृत एवं लॉक (Approved by HO & Locked)' ||
+    !!reportData?.isLockedByHO;
+  const isLockedByCO =
+    reportData?.status === 'अंचल द्वारा स्वीकृत एवं लॉक (Approved & Locked by CO)' ||
+    !!reportData?.isLockedByCO;
+  const isReportLocked = isLockedByHO || isLockedByCO;
+  const isUnlockedForCorrection =
+    reportData?.status === 'संशोधन हेतु वापस / अनलॉक (Unlocked for Correction)';
+
   // Update handlers
   const handleSave = (newStatus?: QuarterlyReport['status']) => {
     if (!reportData) return;
+    if (isReportLocked) {
+      alert(
+        isLockedByHO
+          ? 'यह रिपोर्ट प्रधान कार्यालय (HO) द्वारा पहले ही स्वीकृत एवं लॉक की जा चुकी है। अब इस तिमाही के लिए इसमें कोई बदलाव संभव नहीं है।'
+          : 'यह रिपोर्ट अंचल कार्यालय (CO) द्वारा स्वीकृत एवं लॉक है। संशोधन के लिए पहले इसे अंचल अथवा प्रधान कार्यालय से अनलॉक कराएं।'
+      );
+      return;
+    }
     const updated: QuarterlyReport = {
       ...reportData,
       status: newStatus || reportData.status,
@@ -790,6 +809,111 @@ export const OfficerPortal: React.FC<Props> = ({
           </div>
         )}
       </div>
+
+      {/* Unlocked for Correction Alert Banner */}
+      {isUnlockedForCorrection && (
+        <div className="mb-6 bg-amber-50 border-2 border-amber-400 text-amber-950 p-4 rounded-xl flex flex-col md:flex-row md:items-center justify-between gap-3 shadow-xs animate-in fade-in">
+          <div className="flex items-start md:items-center gap-3">
+            <div className="w-10 h-10 rounded-lg bg-amber-500 text-slate-950 flex items-center justify-center shrink-0 shadow-xs font-bold">
+              <AlertTriangle className="w-5 h-5 text-slate-950" />
+            </div>
+            <div>
+              <h4 className="font-extrabold text-sm text-amber-950 flex items-center gap-2 flex-wrap">
+                <span>⚠️ यह रिपोर्ट संशोधन एवं त्रुटि सुधार हेतु अनलॉक की गई है (Unlocked for Correction)</span>
+                <span className="text-[10px] bg-amber-200 text-amber-950 border border-amber-400 px-2 py-0.5 rounded font-mono font-bold">
+                  संशोधन अनुमत
+                </span>
+              </h4>
+              <p className="text-xs text-amber-900 mt-1 leading-relaxed">
+                {reportData.unlockReason ? (
+                  <span className="font-semibold block bg-white/70 p-2 rounded border border-amber-300">
+                    अनलॉक करने का कारण / निर्देश: "{reportData.unlockReason}"
+                  </span>
+                ) : (
+                  'अंचल / प्रधान कार्यालय द्वारा त्रुटि सुधार हेतु रिपोर्ट अनलॉक की गई है।'
+                )}
+                <span className="block mt-1 text-[11px] text-amber-800">
+                  कृपया आवश्यक आंकड़े संशोधित करें और सुधार पूर्ण होने के बाद नीचे <strong>"अंचल कार्यालय (CO) को प्रेषित करें"</strong> बटन दबाकर पुनः प्रेषित करें।
+                </span>
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* HO Final Locked Alert Banner */}
+      {isLockedByHO && (
+        <div className="mb-6 bg-purple-50 border-2 border-purple-300 text-purple-950 p-4 rounded-xl flex flex-col md:flex-row md:items-center justify-between gap-3 shadow-xs">
+          <div className="flex items-start md:items-center gap-3">
+            <div className="w-10 h-10 rounded-lg bg-purple-700 text-white flex items-center justify-center shrink-0 shadow-xs">
+              <Lock className="w-5 h-5" />
+            </div>
+            <div>
+              <h4 className="font-extrabold text-sm text-purple-950 flex items-center gap-2 flex-wrap">
+                <span>तिमाही रिपोर्ट प्रधान कार्यालय (HO) द्वारा स्वीकृत एवं अंतिम रूप से लॉक है</span>
+                <span className="text-[10px] bg-purple-200 text-purple-900 border border-purple-400 px-2 py-0.5 rounded font-mono font-bold">
+                  🔒 FINAL LOCKED
+                </span>
+              </h4>
+              <p className="text-xs text-purple-800 mt-0.5 leading-relaxed">
+                यह रिपोर्ट प्रधान कार्यालय स्तर से सम्यक समीक्षा उपरांत अंतिम रूप से अनुमोदित कर दी गई है। इस तिमाही ({selectedQuarter}) के लिए इसमें कोई भी संपादन, दोबारा समीक्षा या संशोधन स्वीकार्य नहीं है।
+                {reportData.hoReviewRemarks && (
+                  <span className="block mt-1 font-semibold text-purple-950">
+                    प्र.का. समीक्षा टिप्पणी: "{reportData.hoReviewRemarks}"
+                  </span>
+                )}
+              </p>
+            </div>
+          </div>
+          <div className="shrink-0 flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => onViewPrintable(reportData)}
+              className="px-3.5 py-1.5 bg-purple-700 hover:bg-purple-800 text-white rounded-lg text-xs font-bold inline-flex items-center gap-1.5 shadow-xs transition cursor-pointer"
+            >
+              <Eye className="w-4 h-4" />
+              <span>अनुमोदित रिपोर्ट देखें / PDF</span>
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* CO Locked Alert Banner */}
+      {isLockedByCO && !isLockedByHO && (
+        <div className="mb-6 bg-blue-50 border-2 border-blue-300 text-blue-950 p-4 rounded-xl flex flex-col md:flex-row md:items-center justify-between gap-3 shadow-xs">
+          <div className="flex items-start md:items-center gap-3">
+            <div className="w-10 h-10 rounded-lg bg-blue-700 text-white flex items-center justify-center shrink-0 shadow-xs">
+              <Lock className="w-5 h-5" />
+            </div>
+            <div>
+              <h4 className="font-extrabold text-sm text-blue-950 flex items-center gap-2 flex-wrap">
+                <span>तिमाही रिपोर्ट अंचल कार्यालय (CO) द्वारा स्वीकृत एवं लॉक है</span>
+                <span className="text-[10px] bg-blue-200 text-blue-900 border border-blue-400 px-2 py-0.5 rounded font-mono font-bold">
+                  🔒 CO LOCKED
+                </span>
+              </h4>
+              <p className="text-xs text-blue-800 mt-0.5 leading-relaxed">
+                यह रिपोर्ट अंचल कार्यालय (CO) स्तर पर सम्यक समीक्षा उपरांत स्वीकृत व लॉक कर दी गई है ताकि समेकन के दौरान आंकड़े अपरिवर्तित रहें। यदि किसी आंकड़े में संशोधन अपेक्षित है तो अपने अंचल कार्यालय (CO) या प्रधान कार्यालय (HO) से रिपोर्ट अनलॉक करने का अनुरोध करें।
+                {reportData.coReviewRemarks && (
+                  <span className="block mt-1 font-semibold text-blue-950">
+                    अंचल समीक्षा टिप्पणी: "{reportData.coReviewRemarks}"
+                  </span>
+                )}
+              </p>
+            </div>
+          </div>
+          <div className="shrink-0 flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => onViewPrintable(reportData)}
+              className="px-3.5 py-1.5 bg-blue-700 hover:bg-blue-800 text-white rounded-lg text-xs font-bold inline-flex items-center gap-1.5 shadow-xs transition cursor-pointer"
+            >
+              <Eye className="w-4 h-4" />
+              <span>रिपोर्ट देखें / PDF</span>
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Officer assigned offices datalist for easy 1-click autocomplete */}
       <datalist id="officer-assigned-offices">
@@ -3387,10 +3511,15 @@ export const OfficerPortal: React.FC<Props> = ({
         <div className="flex items-center gap-2">
           <button
             onClick={() => handleSave()}
-            className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-800 rounded-lg text-xs font-bold inline-flex items-center gap-1.5 transition cursor-pointer"
+            disabled={isReportLocked}
+            className={`px-4 py-2 rounded-lg text-xs font-bold inline-flex items-center gap-1.5 transition ${
+              isReportLocked
+                ? 'bg-slate-100 text-slate-400 border border-slate-200 cursor-not-allowed opacity-60'
+                : 'bg-slate-100 hover:bg-slate-200 text-slate-800 cursor-pointer'
+            }`}
           >
             <Save className="w-4 h-4 text-slate-600" />
-            <span>ड्राफ्ट सहेजें (Save Draft)</span>
+            <span>{isReportLocked ? 'ड्राफ्ट सहेजें (लॉक)' : 'ड्राफ्ट सहेजें (Save Draft)'}</span>
           </button>
 
           <button
@@ -3410,7 +3539,23 @@ export const OfficerPortal: React.FC<Props> = ({
           </button>
         </div>
 
-        {currentUser?.role === 'co' && currentOfficer.staffNo !== currentUser.staffNo ? (
+        {isReportLocked ? (
+          <div className="flex items-center gap-2 flex-wrap">
+            <span className="px-5 py-2.5 bg-purple-100 text-purple-900 border border-purple-300 rounded-lg text-xs font-extrabold inline-flex items-center gap-2 cursor-not-allowed shadow-2xs">
+              <Lock className="w-4 h-4 text-purple-700" />
+              <span>🔒 प्रधान कार्यालय (HO) द्वारा स्वीकृत एवं अंतिम लॉक</span>
+            </span>
+            {onBackToCODesk && (
+              <button
+                type="button"
+                onClick={onBackToCODesk}
+                className="px-4 py-2.5 bg-slate-800 hover:bg-slate-900 text-white rounded-lg text-xs font-bold inline-flex items-center gap-1.5 transition cursor-pointer"
+              >
+                <span>← समेकन तालिका पर लौटें</span>
+              </button>
+            )}
+          </div>
+        ) : currentUser?.role === 'co' && currentOfficer.staffNo !== currentUser.staffNo ? (
           <div className="flex items-center gap-2">
             <button
               onClick={() => handleSave('अंचल द्वारा स्वीकृत (Approved by CO)')}

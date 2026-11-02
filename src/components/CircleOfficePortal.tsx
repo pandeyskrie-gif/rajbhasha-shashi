@@ -23,7 +23,11 @@ import {
   Sparkles,
   Layers,
   Calendar,
-  FileCheck2
+  FileCheck2,
+  Lock,
+  Unlock,
+  Undo2,
+  AlertTriangle
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { exportCircleConsolidatedToExcel } from '../utils/excelExport';
@@ -37,6 +41,7 @@ interface Props {
   reports: QuarterlyReport[];
   selectedQuarter: string;
   onUpdateReportStatus: (reportId: string, status: QuarterlyReport['status'], feedback?: string) => void;
+  onUnlockReport?: (reportId: string, reason: string) => void;
   onViewPrintable: (report: QuarterlyReport) => void;
   currentUser?: AuthUser | null;
   onEditOfficerReport?: (officer: Officer) => void;
@@ -50,6 +55,7 @@ export const CircleOfficePortal: React.FC<Props> = ({
   reports,
   selectedQuarter,
   onUpdateReportStatus,
+  onUnlockReport,
   onViewPrintable,
   currentUser,
   onEditOfficerReport,
@@ -60,6 +66,11 @@ export const CircleOfficePortal: React.FC<Props> = ({
   const [coFeedback, setCoFeedback] = useState('');
   const [tableViewMode, setTableViewMode] = useState<'all' | 'publications' | 'essential'>('all');
   const [expandedOfficerStaffNo, setExpandedOfficerStaffNo] = useState<string | null>(null);
+
+  // User-requested Unlock Modal states
+  const [unlockModalReport, setUnlockModalReport] = useState<QuarterlyReport | null>(null);
+  const [unlockReasonText, setUnlockReasonText] = useState('');
+  const [actionToast, setActionToast] = useState('');
 
   const currentCircle = circleOffices.find((c) => c.code === selectedCircleCode) || circleOffices[0];
 
@@ -128,7 +139,52 @@ export const CircleOfficePortal: React.FC<Props> = ({
     setTimeout(() => setForwardSuccess(false), 4000);
   };
 
-  const handleApprove = (report: QuarterlyReport) => {
+  const isHOUser = !currentUser || currentUser.role === 'ho' || currentUser.role === 'admin';
+  const isCOUser = currentUser?.role === 'co';
+
+  // HO Final Approval & Quarter Lock
+  const handleHOApproveAndLock = (report: QuarterlyReport) => {
+    onUpdateReportStatus(
+      report.id,
+      'प्रधान कार्यालय द्वारा स्वीकृत एवं लॉक (Approved by HO & Locked)',
+      coFeedback || 'प्रधान कार्यालय द्वारा सम्यक समीक्षा उपरांत स्वीकृत एवं अंतिम रूप से लॉक की गई।'
+    );
+    setReviewModalReport(null);
+    setCoFeedback('');
+    confetti({ particleCount: 80, spread: 70 });
+    setActionToast(`रिपोर्ट (${report.primaryOfficeName}) प्र.का. द्वारा स्वीकृत एवं अंतिम लॉक की गई।`);
+    setTimeout(() => setActionToast(''), 4000);
+  };
+
+  // HO Save Review Remarks without Final Lock
+  const handleHOSaveRemarksOnly = (report: QuarterlyReport) => {
+    onUpdateReportStatus(
+      report.id,
+      report.status,
+      coFeedback || 'प्रधान कार्यालय द्वारा समीक्षा टिप्पणी दर्ज की गई।'
+    );
+    setReviewModalReport(null);
+    setCoFeedback('');
+    setActionToast(`रिपोर्ट (${report.primaryOfficeName}) पर प्र.का. समीक्षा टिप्पणी सहेज ली गई।`);
+    setTimeout(() => setActionToast(''), 4000);
+  };
+
+  // CO Level Approve & Lock Subordinate RO Report
+  const handleCOApproveAndLock = (report: QuarterlyReport) => {
+    onUpdateReportStatus(
+      report.id,
+      'अंचल द्वारा स्वीकृत एवं लॉक (Approved & Locked by CO)',
+      coFeedback || 'अंचल कार्यालय द्वारा सम्यक समीक्षा उपरांत स्वीकृत एवं लॉक की गई।'
+    );
+    setReviewModalReport(null);
+    setCoFeedback('');
+    confetti({ particleCount: 70, spread: 60 });
+    setActionToast(`रिपोर्ट (${report.primaryOfficeName}) अंचल स्तर पर स्वीकृत एवं लॉक कर दी गई है।`);
+    setTimeout(() => setActionToast(''), 4000);
+  };
+
+  // CO Level Approve without Lock
+  const handleCOApproveOnly = (report: QuarterlyReport) => {
     onUpdateReportStatus(
       report.id,
       'अंचल द्वारा स्वीकृत (Approved by CO)',
@@ -136,6 +192,74 @@ export const CircleOfficePortal: React.FC<Props> = ({
     );
     setReviewModalReport(null);
     setCoFeedback('');
+    setActionToast(`रिपोर्ट (${report.primaryOfficeName}) अंचल स्तर पर स्वीकृत की गई।`);
+    setTimeout(() => setActionToast(''), 4000);
+  };
+
+  // CO Bulk Lock All Subordinate RO Reports
+  const handleCOLockAllReports = () => {
+    const toLock = circleReports.filter(
+      (r) => r.status !== 'ड्राफ्ट (Draft)' && !r.isLockedByCO && !r.isLockedByHO
+    );
+    if (toLock.length === 0) return;
+    toLock.forEach((r) => {
+      onUpdateReportStatus(
+        r.id,
+        'अंचल द्वारा स्वीकृत एवं लॉक (Approved & Locked by CO)',
+        'अंचल कार्यालय द्वारा सभी अधीनस्थ RO रिपोर्टें सम्यक समीक्षा उपरांत स्वीकृत व लॉक की गईं।'
+      );
+    });
+    confetti({ particleCount: 110, spread: 75 });
+    setActionToast(`अंचल के सभी ${toLock.length} प्रस्तुत RO रिपोर्टें सफलतापूर्वक लॉक कर दी गई हैं।`);
+    setTimeout(() => setActionToast(''), 4000);
+  };
+
+  // Quick Lock single report by CO
+  const handleQuickLockByCO = (report: QuarterlyReport) => {
+    onUpdateReportStatus(
+      report.id,
+      'अंचल द्वारा स्वीकृत एवं लॉक (Approved & Locked by CO)',
+      'अंचल कार्यालय द्वारा रिपोर्ट लॉक की गई।'
+    );
+    setActionToast(`रिपोर्ट (${report.primaryOfficeName}) अंचल स्तर पर लॉक कर दी गई है।`);
+    setTimeout(() => setActionToast(''), 4000);
+  };
+
+  // Confirm Unlock Report (Executed by CO or HO when report has errors/mistakes)
+  const handleConfirmUnlock = () => {
+    if (!unlockModalReport) return;
+    const reason = unlockReasonText.trim() || 'डेटा सुधार एवं संशोधन हेतु अधिकृत स्तर से रिपोर्ट अनलॉक की गई।';
+    if (onUnlockReport) {
+      onUnlockReport(unlockModalReport.id, reason);
+    } else {
+      onUpdateReportStatus(
+        unlockModalReport.id,
+        'संशोधन हेतु वापस / अनलॉक (Unlocked for Correction)',
+        reason
+      );
+    }
+    setActionToast(`रिपोर्ट (${unlockModalReport.primaryOfficeName}) सफलतापूर्वक अनलॉक कर दी गई है। अब इसमें संशोधन किया जा सकता है।`);
+    setUnlockModalReport(null);
+    setUnlockReasonText('');
+    setTimeout(() => setActionToast(''), 5000);
+  };
+
+  // HO Bulk Final Lock All Reports
+  const handleHOLockAllReports = () => {
+    const toLock = circleReports.filter(
+      (r) => r.status !== 'ड्राफ्ट (Draft)' && !r.isLockedByHO && r.status !== 'प्रधान कार्यालय द्वारा स्वीकृत एवं लॉक (Approved by HO & Locked)'
+    );
+    if (toLock.length === 0) return;
+    toLock.forEach((r) => {
+      onUpdateReportStatus(
+        r.id,
+        'प्रधान कार्यालय द्वारा स्वीकृत एवं लॉक (Approved by HO & Locked)',
+        'प्रधान कार्यालय द्वारा अंचल की सभी रिपोर्टें सम्यक समीक्षा उपरांत स्वीकृत एवं अंतिम रूप से लॉक की गईं।'
+      );
+    });
+    confetti({ particleCount: 140, spread: 90 });
+    setActionToast(`अंचल की सभी प्रस्तुत रिपोर्टें प्र.का. द्वारा अंतिम लॉक कर दी गई हैं।`);
+    setTimeout(() => setActionToast(''), 4000);
   };
 
   return (
@@ -211,30 +335,87 @@ export const CircleOfficePortal: React.FC<Props> = ({
           </div>
         </div>
 
-        <div className="flex items-center gap-2.5 w-full md:w-auto justify-end shrink-0 flex-wrap">
-          <span
-            className={`text-xs px-2.5 py-1 rounded-md font-bold border ${
-              coReport?.status?.includes('स्वीकृत')
-                ? 'bg-emerald-100 text-emerald-800 border-emerald-300'
-                : coReport?.status
-                ? 'bg-sky-100 text-sky-800 border-sky-300'
-                : 'bg-amber-100 text-amber-900 border-amber-300'
-            }`}
-          >
-            स्थिति: {coReport?.status || 'ड्राफ्ट (प्रतीक्षित)'}
-          </span>
+        {(() => {
+          const isCOReportLocked = coReport?.status === 'प्रधान कार्यालय द्वारा स्वीकृत एवं लॉक (Approved by HO & Locked)' || !!coReport?.isLockedByHO;
+          return (
+            <div className="flex items-center gap-2.5 w-full md:w-auto justify-end shrink-0 flex-wrap">
+              <span
+                className={`text-xs px-2.5 py-1 rounded-md font-bold border ${
+                  isCOReportLocked
+                    ? 'bg-purple-100 text-purple-900 border-purple-300'
+                    : coReport?.status?.includes('स्वीकृत')
+                    ? 'bg-emerald-100 text-emerald-800 border-emerald-300'
+                    : coReport?.status
+                    ? 'bg-sky-100 text-sky-800 border-sky-300'
+                    : 'bg-amber-100 text-amber-900 border-amber-300'
+                }`}
+              >
+                {isCOReportLocked ? 'स्थिति: 🔒 प्र.का. द्वारा स्वीकृत एवं लॉक' : `स्थिति: ${coReport?.status || 'ड्राफ्ट (प्रतीक्षित)'}`}
+              </span>
 
-          {onEditOfficerReport && coOfficer && (
-            <button
-              type="button"
-              onClick={() => onEditOfficerReport(coOfficer)}
-              className="px-3.5 py-1.5 bg-amber-400 hover:bg-amber-300 text-slate-950 font-bold text-xs rounded-lg shadow-xs transition flex items-center gap-1.5 cursor-pointer"
-            >
-              <FileText className="w-3.5 h-3.5" />
-              <span>अपनी रिपोर्ट भरें / संपादित करें</span>
-            </button>
-          )}
-        </div>
+              {/* HO User: Strictly Review / View Only, NEVER Fill/Edit */}
+              {isHOUser ? (
+                <div className="flex items-center gap-1.5">
+                  {coReport && (
+                    <button
+                      type="button"
+                      onClick={() => onViewPrintable(coReport)}
+                      className="px-3 py-1.5 bg-blue-50 text-blue-800 hover:bg-blue-100 border border-blue-200 rounded-lg text-xs font-bold inline-flex items-center gap-1.5 cursor-pointer shadow-2xs"
+                    >
+                      <Eye className="w-3.5 h-3.5" />
+                      <span>CO रिपोर्ट देखें / PDF</span>
+                    </button>
+                  )}
+                  {isCOReportLocked ? (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (coReport) {
+                          setUnlockModalReport(coReport);
+                          setUnlockReasonText('');
+                        }
+                      }}
+                      className="px-3 py-1.5 bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-300 rounded-lg text-xs font-bold inline-flex items-center gap-1.5 cursor-pointer shadow-2xs"
+                      title="आवश्यकता पड़ने पर CO रिपोर्ट को अनलॉक करें"
+                    >
+                      <Unlock className="w-3.5 h-3.5 text-amber-700" />
+                      <span>HO अनलॉक करें</span>
+                    </button>
+                  ) : coReport ? (
+                    <button
+                      type="button"
+                      onClick={() => setReviewModalReport(coReport)}
+                      className="px-3 py-1.5 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 rounded-lg text-xs font-bold inline-flex items-center gap-1.5 cursor-pointer shadow-2xs"
+                    >
+                      <span>समीक्षा करें</span>
+                    </button>
+                  ) : null}
+                </div>
+              ) : (
+                onEditOfficerReport && coOfficer && (
+                  isCOReportLocked ? (
+                    <span
+                      className="px-3.5 py-1.5 bg-slate-100 text-slate-500 font-bold text-xs rounded-lg border border-slate-300 flex items-center gap-1.5 cursor-not-allowed shadow-2xs"
+                      title="यह रिपोर्ट प्रधान कार्यालय (HO) द्वारा अंतिम रूप से स्वीकृत एवं लॉक है। अब इस तिमाही के लिए संपादन बंद है।"
+                    >
+                      <Lock className="w-3.5 h-3.5 text-purple-700" />
+                      <span>🔒 HO स्वीकृत एवं लॉक</span>
+                    </span>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={() => onEditOfficerReport(coOfficer)}
+                      className="px-3.5 py-1.5 bg-amber-400 hover:bg-amber-300 text-slate-950 font-bold text-xs rounded-lg shadow-xs transition flex items-center gap-1.5 cursor-pointer"
+                    >
+                      <FileText className="w-3.5 h-3.5" />
+                      <span>अपनी रिपोर्ट भरें / संपादित करें</span>
+                    </button>
+                  )
+                )
+              )}
+            </div>
+          );
+        })()}
       </div>
 
       {/* KPI Cards Row */}
@@ -378,21 +559,91 @@ export const CircleOfficePortal: React.FC<Props> = ({
               <span>समेकित एक्सेल (.xlsx)</span>
             </button>
 
-            {/* Forward to HO Button */}
-            <button
-              onClick={handleForwardToHO}
-              className="px-3.5 py-1.5 bg-blue-700 hover:bg-blue-800 text-white rounded-lg text-xs font-bold inline-flex items-center gap-1.5 transition shadow-sm cursor-pointer"
-            >
-              <Send className="w-3.5 h-3.5" />
-              <span>प्रधान कार्यालय (HO) को अग्रसारित करें</span>
-            </button>
+            {/* Forward to HO Button or HO Lock Status */}
+            {(() => {
+              const allCircleReportsHOLocked =
+                circleOfficers.length > 0 &&
+                circleOfficers.every((off) => {
+                  const rep = circleReports.find((r) => r.officerStaffNo === off.staffNo);
+                  return rep?.isLockedByHO || rep?.status === 'प्रधान कार्यालय द्वारा स्वीकृत एवं लॉक (Approved by HO & Locked)';
+                });
+
+              if (isHOUser) {
+                if (allCircleReportsHOLocked) {
+                  return (
+                    <span className="px-3 py-1.5 bg-purple-100 text-purple-900 border border-purple-300 rounded-lg text-xs font-bold inline-flex items-center gap-1.5 shadow-2xs">
+                      <Lock className="w-3.5 h-3.5 text-purple-700" />
+                      <span>🔒 सभी रिपोर्टें HO स्वीकृत व लॉक</span>
+                    </span>
+                  );
+                }
+                return (
+                  <button
+                    type="button"
+                    onClick={handleHOLockAllReports}
+                    className="px-3.5 py-1.5 bg-purple-700 hover:bg-purple-800 text-white rounded-lg text-xs font-bold inline-flex items-center gap-1.5 transition shadow-sm cursor-pointer"
+                    title="अंचल की सभी प्रस्तुत रिपोर्टों को एक साथ प्रधान कार्यालय स्तर पर स्वीकृत व अंतिम रूप से लॉक करें"
+                  >
+                    <Lock className="w-3.5 h-3.5" />
+                    <span>🔒 प्रस्तुत रिपोर्टें अंतिम लॉक करें (Final Lock)</span>
+                  </button>
+                );
+              }
+
+              if (allCircleReportsHOLocked) {
+                return (
+                  <span className="px-3 py-1.5 bg-purple-100 text-purple-900 border border-purple-300 rounded-lg text-xs font-bold inline-flex items-center gap-1.5 shadow-2xs">
+                    <Lock className="w-3.5 h-3.5 text-purple-700" />
+                    <span>🔒 प्र.का. द्वारा स्वीकृत एवं लॉक</span>
+                  </span>
+                );
+              }
+
+              return (
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={handleCOLockAllReports}
+                    className="px-3.5 py-1.5 bg-amber-500 hover:bg-amber-600 text-slate-950 rounded-lg text-xs font-bold inline-flex items-center gap-1.5 transition shadow-sm cursor-pointer"
+                    title="अपने क्षेत्राधीन सभी ROs की प्रस्तुत रिपोर्टों को एक क्लिक में स्वीकृत व लॉक करें"
+                  >
+                    <Lock className="w-3.5 h-3.5" />
+                    <span>🔒 सभी RO रिपोर्टें लॉक करें</span>
+                  </button>
+                  <button
+                    onClick={handleForwardToHO}
+                    className="px-3.5 py-1.5 bg-blue-700 hover:bg-blue-800 text-white rounded-lg text-xs font-bold inline-flex items-center gap-1.5 transition shadow-sm cursor-pointer"
+                    title="सभी लॉक रिपोर्टें अपनी CO रिपोर्ट के साथ प्रधान कार्यालय को प्रेषित करें"
+                  >
+                    <Send className="w-3.5 h-3.5" />
+                    <span>HO को अग्रसारित करें</span>
+                  </button>
+                </div>
+              );
+            })()}
           </div>
         </div>
+
+        {/* Action Toast Notification */}
+        {actionToast && (
+          <div className="p-3 bg-blue-50 border-b border-blue-200 text-blue-900 text-xs font-semibold flex items-center justify-between gap-2 animate-in fade-in">
+            <div className="flex items-center gap-2">
+              <CheckCircle2 className="w-4 h-4 text-blue-700 shrink-0" />
+              <span>{actionToast}</span>
+            </div>
+            <button
+              onClick={() => setActionToast('')}
+              className="text-blue-700 hover:text-blue-950 font-bold px-1.5 py-0.5 rounded cursor-pointer"
+            >
+              ×
+            </button>
+          </div>
+        )}
 
         {/* Forward Success Notification */}
         {forwardSuccess && (
           <div className="p-3 bg-emerald-50 border-b border-emerald-200 text-emerald-800 text-xs font-semibold flex items-center gap-2">
-            <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+            <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
             <span>
               {currentCircle.name} की सभी समेकित रिपोर्टें सफलतापूर्वक प्रधान कार्यालय (राजभाषा अनुभाग) को अग्रसारित कर दी गई हैं!
             </span>
@@ -448,6 +699,10 @@ export const CircleOfficePortal: React.FC<Props> = ({
               {filteredOfficers.map((off, idx) => {
                 const rep = circleReports.find((r) => r.officerStaffNo === off.staffNo);
                 const hasReport = !!rep;
+                const isLockedByHO = rep?.status === 'प्रधान कार्यालय द्वारा स्वीकृत एवं लॉक (Approved by HO & Locked)' || !!rep?.isLockedByHO;
+                const isLockedByCO = rep?.status === 'अंचल द्वारा स्वीकृत एवं लॉक (Approved & Locked by CO)' || !!rep?.isLockedByCO;
+                const isReportLocked = isLockedByHO || isLockedByCO;
+                const isUnlockedForCorrection = rep?.status === 'संशोधन हेतु वापस / अनलॉक (Unlocked for Correction)';
                 const status = rep?.status || 'प्रतीक्षित / लंबित';
                 const isExpanded = expandedOfficerStaffNo === off.staffNo;
 
@@ -482,19 +737,39 @@ export const CircleOfficePortal: React.FC<Props> = ({
                         )}
                       </td>
                       <td className="p-3">
-                        <span
-                          className={`inline-block px-2.5 py-1 rounded-full text-[11px] font-bold ${
-                            status.includes('स्वीकृत')
-                              ? 'bg-emerald-100 text-emerald-800'
-                              : status.includes('प्रेषित')
-                              ? 'bg-indigo-100 text-indigo-800'
-                              : status.includes('प्रस्तुत')
-                              ? 'bg-blue-100 text-blue-800'
-                              : 'bg-amber-50 text-amber-800 border border-amber-200'
-                          }`}
-                        >
-                          {status}
-                        </span>
+                        {isLockedByHO ? (
+                          <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-extrabold bg-purple-100 text-purple-900 border border-purple-300 shadow-2xs">
+                            <Lock className="w-3 h-3 text-purple-700" />
+                            <span>प्र.का. स्वीकृत व लॉक</span>
+                          </span>
+                        ) : isLockedByCO ? (
+                          <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-extrabold bg-blue-100 text-blue-900 border border-blue-300 shadow-2xs">
+                            <Lock className="w-3 h-3 text-blue-700" />
+                            <span>अंचल स्वीकृत व लॉक</span>
+                          </span>
+                        ) : isUnlockedForCorrection ? (
+                          <span
+                            className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold bg-amber-100 text-amber-900 border border-amber-300 animate-pulse"
+                            title={rep?.unlockReason ? `कारण: ${rep.unlockReason}` : 'संशोधन हेतु अनलॉक'}
+                          >
+                            <Unlock className="w-3 h-3 text-amber-700" />
+                            <span>संशोधन हेतु अनलॉक</span>
+                          </span>
+                        ) : (
+                          <span
+                            className={`inline-block px-2.5 py-1 rounded-full text-[11px] font-bold ${
+                              status.includes('स्वीकृत')
+                                ? 'bg-emerald-100 text-emerald-800'
+                                : status.includes('प्रेषित')
+                                ? 'bg-indigo-100 text-indigo-800'
+                                : status.includes('प्रस्तुत')
+                                ? 'bg-blue-100 text-blue-800'
+                                : 'bg-amber-50 text-amber-800 border border-amber-200'
+                            }`}
+                          >
+                            {status}
+                          </span>
+                        )}
                       </td>
 
                       {/* Translation & Branch Visits */}
@@ -721,17 +996,29 @@ export const CircleOfficePortal: React.FC<Props> = ({
                             </button>
                           )}
 
-                          {/* Edit / Fill Form Button */}
-                          {onEditOfficerReport && (
-                            <button
-                              type="button"
-                              onClick={() => onEditOfficerReport(off)}
-                              className="px-2 py-1 bg-amber-50 hover:bg-amber-100 text-blue-950 border border-amber-300 rounded text-[11px] font-bold inline-flex items-center gap-1 transition cursor-pointer"
-                              title={off.primaryOfficeType === 'CO' ? 'अपनी अंचल कार्यालय रिपोर्ट भरें / संपादित करें' : 'इस RO की रिपोर्ट खोलें व संपादित करें'}
-                            >
-                              <FileText className="w-3 h-3 text-amber-700" />
-                              <span>{off.primaryOfficeType === 'CO' ? 'CO फॉर्म भरें' : 'संपादित करें'}</span>
-                            </button>
+                          {/* Edit / Fill Form Button - strictly hidden for HO user */}
+                          {!isHOUser && onEditOfficerReport && (
+                            isReportLocked ? (
+                              <button
+                                type="button"
+                                disabled
+                                className="px-2 py-1 bg-slate-100 text-slate-400 border border-slate-200 rounded text-[11px] font-bold inline-flex items-center gap-1 cursor-not-allowed opacity-60"
+                                title={isLockedByHO ? 'यह रिपोर्ट प्रधान कार्यालय (HO) द्वारा अंतिम रूप से स्वीकृत व लॉक है, संपादन बंद है।' : 'यह रिपोर्ट अंचल कार्यालय (CO) द्वारा स्वीकृत व लॉक है, संपादन बंद है।'}
+                              >
+                                <Lock className="w-3 h-3 text-slate-400" />
+                                <span>{off.primaryOfficeType === 'CO' ? (isLockedByHO ? 'HO लॉक' : 'CO लॉक') : (isLockedByHO ? 'HO लॉक' : 'CO लॉक')}</span>
+                              </button>
+                            ) : (
+                              <button
+                                type="button"
+                                onClick={() => onEditOfficerReport(off)}
+                                className="px-2 py-1 bg-amber-50 hover:bg-amber-100 text-blue-950 border border-amber-300 rounded text-[11px] font-bold inline-flex items-center gap-1 transition cursor-pointer"
+                                title={off.primaryOfficeType === 'CO' ? 'अपनी अंचल कार्यालय रिपोर्ट भरें / संपादित करें' : 'इस RO की रिपोर्ट खोलें व संपादित करें'}
+                              >
+                                <FileText className="w-3 h-3 text-amber-700" />
+                                <span>{off.primaryOfficeType === 'CO' ? 'CO फॉर्म भरें' : 'संपादित करें'}</span>
+                              </button>
+                            )
                           )}
 
                           {rep ? (
@@ -743,12 +1030,74 @@ export const CircleOfficePortal: React.FC<Props> = ({
                               >
                                 <Eye className="w-4 h-4" />
                               </button>
-                              <button
-                                onClick={() => setReviewModalReport(rep)}
-                                className="px-2 py-1 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 rounded text-[11px] font-bold cursor-pointer"
-                              >
-                                समीक्षा
-                              </button>
+
+                              {isLockedByHO ? (
+                                <>
+                                  <span
+                                    className="px-2 py-1 bg-purple-50 text-purple-900 border border-purple-200 rounded text-[11px] font-bold inline-flex items-center gap-1 select-none"
+                                    title="प्रधान कार्यालय द्वारा यह रिपोर्ट पहले ही स्वीकृत एवं अंतिम रूप से लॉक की जा चुकी है।"
+                                  >
+                                    <Lock className="w-3 h-3 text-purple-700" />
+                                    <span>HO लॉक 🔒</span>
+                                  </span>
+                                  {isHOUser && (
+                                    <button
+                                      type="button"
+                                      onClick={() => {
+                                        setUnlockModalReport(rep);
+                                        setUnlockReasonText('');
+                                      }}
+                                      className="px-2 py-1 bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-300 rounded text-[11px] font-bold inline-flex items-center gap-1 cursor-pointer transition shadow-2xs"
+                                      title="त्रुटि सुधार हेतु इस रिपोर्ट को अनलॉक करें"
+                                    >
+                                      <Unlock className="w-3 h-3 text-amber-700" />
+                                      <span>अनलॉक</span>
+                                    </button>
+                                  )}
+                                </>
+                              ) : isLockedByCO ? (
+                                <>
+                                  <span
+                                    className="px-2 py-1 bg-blue-50 text-blue-900 border border-blue-200 rounded text-[11px] font-bold inline-flex items-center gap-1 select-none"
+                                    title="अंचल कार्यालय (CO) द्वारा यह रिपोर्ट स्वीकृत एवं लॉक की गई है।"
+                                  >
+                                    <Lock className="w-3 h-3 text-blue-700" />
+                                    <span>CO लॉक 🔒</span>
+                                  </span>
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      setUnlockModalReport(rep);
+                                      setUnlockReasonText('');
+                                    }}
+                                    className="px-2 py-1 bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-300 rounded text-[11px] font-bold inline-flex items-center gap-1 cursor-pointer transition shadow-2xs"
+                                    title="त्रुटि सुधार हेतु इस रिपोर्ट को अनलॉक करें"
+                                  >
+                                    <Unlock className="w-3 h-3 text-amber-700" />
+                                    <span>अनलॉक</span>
+                                  </button>
+                                </>
+                              ) : (
+                                <>
+                                  <button
+                                    onClick={() => setReviewModalReport(rep)}
+                                    className="px-2 py-1 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 rounded text-[11px] font-bold cursor-pointer transition hover:shadow-xs"
+                                  >
+                                    समीक्षा
+                                  </button>
+                                  {!isHOUser && (
+                                    <button
+                                      type="button"
+                                      onClick={() => handleQuickLockByCO(rep)}
+                                      className="px-2 py-1 bg-amber-100 hover:bg-amber-200 text-amber-950 border border-amber-300 rounded text-[11px] font-bold cursor-pointer transition inline-flex items-center gap-1 shadow-2xs"
+                                      title="इस रिपोर्ट को अंचल स्तर पर लॉक करें"
+                                    >
+                                      <Lock className="w-3 h-3 text-amber-800" />
+                                      <span>लॉक</span>
+                                    </button>
+                                  )}
+                                </>
+                              )}
                             </>
                           ) : (
                             <span className="text-[10px] text-amber-700 italic">लंबित</span>
@@ -902,67 +1251,300 @@ export const CircleOfficePortal: React.FC<Props> = ({
       </div>
 
       {/* Review & Approve Modal */}
-      {reviewModalReport && (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-xs z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-xl shadow-2xl max-w-xl w-full p-6 space-y-4">
+      {reviewModalReport && (() => {
+        const isLockedByHO = reviewModalReport.status === 'प्रधान कार्यालय द्वारा स्वीकृत एवं लॉक (Approved by HO & Locked)' || !!reviewModalReport.isLockedByHO;
+        const isLockedByCO = reviewModalReport.status === 'अंचल द्वारा स्वीकृत एवं लॉक (Approved & Locked by CO)' || !!reviewModalReport.isLockedByCO;
+        const isModalReportLocked = isLockedByHO || isLockedByCO;
+
+        return (
+          <div className="fixed inset-0 bg-black/50 backdrop-blur-xs z-50 flex items-center justify-center p-4 animate-in fade-in duration-200">
+            <div className="bg-white rounded-xl shadow-2xl max-w-xl w-full p-6 space-y-4 border border-slate-200">
+              <div className="flex items-center justify-between border-b pb-3">
+                <div className="flex items-center gap-2">
+                  <h3 className="font-bold text-base text-slate-900">
+                    {isHOUser
+                      ? `प्रधान कार्यालय (HO) समीक्षा व अनुमोदन`
+                      : `अंचल कार्यालय समीक्षा: ${reviewModalReport.officerName}`}
+                  </h3>
+                  {isLockedByHO ? (
+                    <span className="text-[10px] bg-purple-100 text-purple-900 border border-purple-300 font-bold px-2 py-0.5 rounded">
+                      🔒 HO लॉक
+                    </span>
+                  ) : isLockedByCO ? (
+                    <span className="text-[10px] bg-blue-100 text-blue-900 border border-blue-300 font-bold px-2 py-0.5 rounded">
+                      🔒 CO लॉक
+                    </span>
+                  ) : null}
+                </div>
+                <button
+                  onClick={() => setReviewModalReport(null)}
+                  className="text-slate-400 hover:text-slate-600 font-bold text-lg cursor-pointer"
+                >
+                  ×
+                </button>
+              </div>
+
+              {isLockedByHO ? (
+                <div className="space-y-4">
+                  <div className="p-4 bg-purple-50 border border-purple-200 rounded-xl text-purple-950 text-xs space-y-2">
+                    <div className="flex items-center gap-2 font-bold text-sm text-purple-900">
+                      <Lock className="w-4 h-4 text-purple-700" />
+                      <span>यह रिपोर्ट प्रधान कार्यालय (HO) द्वारा पहले ही स्वीकृत एवं अंतिम रूप से लॉक की जा चुकी है।</span>
+                    </div>
+                    <p className="text-purple-800">
+                      इस तिमाही ({selectedQuarter}) के लिए संपादन बंद है। यदि किसी आंकड़े में संशोधन अपेक्षित है तो इसे नीचे दिए गए बटन से अनलॉक किया जा सकता है।
+                    </p>
+                    {reviewModalReport.approvedByHOAt && (
+                      <p className="text-[11px] text-purple-700 font-mono">
+                        स्वीकृति तिथि: {new Date(reviewModalReport.approvedByHOAt).toLocaleString('hi-IN')}
+                      </p>
+                    )}
+                    {reviewModalReport.hoReviewRemarks && (
+                      <p className="bg-white/80 p-2.5 rounded border border-purple-200 font-semibold text-purple-950">
+                        प्र.का. टिप्पणी: "{reviewModalReport.hoReviewRemarks}"
+                      </p>
+                    )}
+                  </div>
+
+                  <div className="pt-3 border-t flex items-center justify-end gap-2">
+                    <button
+                      onClick={() => {
+                        onViewPrintable(reviewModalReport);
+                        setReviewModalReport(null);
+                      }}
+                      className="px-4 py-2 bg-blue-700 hover:bg-blue-800 text-white rounded-lg text-xs font-bold inline-flex items-center gap-1.5 cursor-pointer shadow-xs"
+                    >
+                      <Eye className="w-4 h-4" />
+                      <span>रिपोर्ट देखें</span>
+                    </button>
+                    {isHOUser && (
+                      <button
+                        onClick={() => {
+                          const repToUnlock = reviewModalReport;
+                          setReviewModalReport(null);
+                          setUnlockModalReport(repToUnlock);
+                          setUnlockReasonText('');
+                        }}
+                        className="px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white rounded-lg text-xs font-bold inline-flex items-center gap-1.5 cursor-pointer shadow-xs"
+                      >
+                        <Unlock className="w-4 h-4" />
+                        <span>संशोधन हेतु अनलॉक करें</span>
+                      </button>
+                    )}
+                    <button
+                      onClick={() => setReviewModalReport(null)}
+                      className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-xs font-semibold cursor-pointer"
+                    >
+                      बंद करें
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <>
+                  <div className="space-y-3 text-xs">
+                    {isHOUser && (
+                      <div className="p-3 bg-amber-50 border border-amber-300 rounded-lg text-amber-950 text-[11px] flex items-start gap-2">
+                        <Lock className="w-4 h-4 text-amber-700 shrink-0 mt-0.5" />
+                        <div>
+                          <strong className="block font-bold">⚠️ प्रधान कार्यालय समीक्षा अधिकार:</strong>
+                          आप केवल समीक्षा टिप्पणी दर्ज कर सकते हैं अथवा रिपोर्ट को अंतिम रूप से स्वीकृत व लॉक कर सकते हैं। डेटा में संशोधन हेतु अधिकार संबंधित राजभाषा अधिकारी का है।
+                        </div>
+                      </div>
+                    )}
+
+                    <div className="bg-slate-50 p-3 rounded-lg space-y-1">
+                      <div>
+                        <strong>अधिकारी:</strong> {reviewModalReport.officerName} ({reviewModalReport.officerStaffNo})
+                      </div>
+                      <div>
+                        <strong>कार्यालय:</strong> {reviewModalReport.primaryOfficeName}
+                      </div>
+                      <div>
+                        <strong>समवर्ती प्रभार:</strong>{' '}
+                        {reviewModalReport.concurrentOffices.join(', ') || 'कोई नहीं'}
+                      </div>
+                      <div>
+                        <strong>अनुवाद स्थिति:</strong>{' '}
+                        {reviewModalReport.translation?.pagesTranslatedInHindi} पृष्ठ अनूदित (लंबित:{' '}
+                        {reviewModalReport.translation?.pendingPages})
+                      </div>
+                      <div>
+                        <strong>शाखा निरीक्षण:</strong> {reviewModalReport.branchVisits?.length || 0} शाखाएं विज़िट
+                      </div>
+                      {isLockedByCO && (
+                        <div className="text-blue-900 font-bold flex items-center gap-1 pt-1">
+                          <Lock className="w-3.5 h-3.5 text-blue-700" />
+                          <span>यह रिपोर्ट अंचल कार्यालय (CO) द्वारा पहले ही लॉक की जा चुकी है।</span>
+                        </div>
+                      )}
+                    </div>
+
+                    <div>
+                      <label className="block font-semibold text-slate-700 mb-1">
+                        {isHOUser
+                          ? 'प्रधान कार्यालय (HO) समीक्षा टिप्पणी व अनुमोदन निर्देश:'
+                          : 'अंचल कार्यालय की समीक्षा टिप्पणी / फीडबैक (CO Remarks):'}
+                      </label>
+                      <textarea
+                        rows={3}
+                        value={coFeedback}
+                        onChange={(e) => setCoFeedback(e.target.value)}
+                        placeholder={
+                          isHOUser
+                            ? 'उदा. रिपोर्ट की सम्यक समीक्षा कर ली गई है, आंकड़े संतोषजनक हैं...'
+                            : 'उदा. रिपोर्ट की जांच कर ली गई है, सभी आंकड़े संतोषजनक हैं...'
+                        }
+                        className="w-full p-2.5 bg-slate-50 border border-slate-300 rounded-lg text-xs"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="pt-3 border-t flex items-center justify-between gap-2 flex-wrap">
+                    <div>
+                      {isLockedByCO && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const repToUnlock = reviewModalReport;
+                            setReviewModalReport(null);
+                            setUnlockModalReport(repToUnlock);
+                            setUnlockReasonText('');
+                          }}
+                          className="px-3 py-1.5 bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-300 rounded-lg text-xs font-bold inline-flex items-center gap-1 cursor-pointer"
+                        >
+                          <Unlock className="w-3.5 h-3.5 text-amber-700" />
+                          <span>संशोधन हेतु अनलॉक करें</span>
+                        </button>
+                      )}
+                    </div>
+
+                    <div className="flex items-center gap-2">
+                      <button
+                        onClick={() => setReviewModalReport(null)}
+                        className="px-3.5 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-xs font-semibold cursor-pointer"
+                      >
+                        रद्द करें
+                      </button>
+
+                      {isHOUser ? (
+                        <>
+                          <button
+                            type="button"
+                            onClick={() => handleHOSaveRemarksOnly(reviewModalReport)}
+                            className="px-3.5 py-2 bg-slate-700 hover:bg-slate-800 text-white rounded-lg text-xs font-bold flex items-center gap-1 cursor-pointer transition shadow-xs"
+                            title="केवल टिप्पणी सहेजें, रिपोर्ट को लॉक न करें"
+                          >
+                            <span>💾 टिप्पणी सहेजें</span>
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => handleHOApproveAndLock(reviewModalReport)}
+                            className="px-4 py-2 bg-purple-700 hover:bg-purple-800 text-white rounded-lg text-xs font-bold flex items-center gap-1.5 cursor-pointer shadow-xs transition"
+                            title="प्रधान कार्यालय स्तर पर स्थायी अनुमोदन एवं अंतिम लॉक"
+                          >
+                            <Lock className="w-4 h-4" />
+                            <span>🔒 प्र.का. अंतिम लॉक करें</span>
+                          </button>
+                        </>
+                      ) : (
+                        <>
+                          <button
+                            type="button"
+                            onClick={() => handleCOApproveOnly(reviewModalReport)}
+                            className="px-3.5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-bold flex items-center gap-1 cursor-pointer transition shadow-xs"
+                            title="केवल स्वीकृत करें, रिपोर्ट अनलॉक रहेगी"
+                          >
+                            <CheckCircle2 className="w-4 h-4" />
+                            <span>✓ केवल स्वीकृत करें</span>
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => handleCOApproveAndLock(reviewModalReport)}
+                            className="px-4 py-2 bg-blue-900 hover:bg-blue-800 text-white rounded-lg text-xs font-bold flex items-center gap-1.5 cursor-pointer shadow-xs transition"
+                            title="अंचल स्तर पर स्वीकृत कर लॉक करें ताकि RO संशोधन न कर सके"
+                          >
+                            <Lock className="w-4 h-4" />
+                            <span>🔒 स्वीकृत व लॉक करें</span>
+                          </button>
+                        </>
+                      )}
+                    </div>
+                  </div>
+                </>
+              )}
+            </div>
+          </div>
+        );
+      })()}
+
+      {/* Unlock Confirmation Modal */}
+      {unlockModalReport && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-xs z-50 flex items-center justify-center p-4 animate-in fade-in duration-200">
+          <div className="bg-white rounded-xl shadow-2xl max-w-lg w-full p-6 space-y-4 border border-amber-300">
             <div className="flex items-center justify-between border-b pb-3">
-              <h3 className="font-bold text-base text-slate-900">
-                अंचल कार्यालय समीक्षा: {reviewModalReport.officerName}
-              </h3>
+              <div className="flex items-center gap-2.5">
+                <div className="w-9 h-9 rounded-lg bg-amber-100 flex items-center justify-center text-amber-800">
+                  <Unlock className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="font-bold text-sm text-slate-900">
+                    रिपोर्ट अनलॉक एवं संशोधन की अनुमति
+                  </h3>
+                  <p className="text-[11px] text-slate-500">
+                    {unlockModalReport.officerName} • {unlockModalReport.primaryOfficeName}
+                  </p>
+                </div>
+              </div>
               <button
-                onClick={() => setReviewModalReport(null)}
-                className="text-slate-400 hover:text-slate-600 font-bold text-lg"
+                onClick={() => {
+                  setUnlockModalReport(null);
+                  setUnlockReasonText('');
+                }}
+                className="text-slate-400 hover:text-slate-600 font-bold text-lg cursor-pointer"
               >
                 ×
               </button>
             </div>
 
-            <div className="space-y-3 text-xs">
-              <div className="bg-slate-50 p-3 rounded-lg space-y-1">
-                <div>
-                  <strong>कार्यालय:</strong> {reviewModalReport.primaryOfficeName}
-                </div>
-                <div>
-                  <strong>समवर्ती प्रभार:</strong>{' '}
-                  {reviewModalReport.concurrentOffices.join(', ') || 'कोई नहीं'}
-                </div>
-                <div>
-                  <strong>अनुवाद स्थिति:</strong>{' '}
-                  {reviewModalReport.translation?.pagesTranslatedInHindi} पृष्ठ अनूदित (लंबित:{' '}
-                  {reviewModalReport.translation?.pendingPages})
-                </div>
-                <div>
-                  <strong>शाखा निरीक्षण:</strong> {reviewModalReport.branchVisits?.length || 0} शाखाएं विज़िट
-                </div>
+            <div className="p-3 bg-amber-50 border border-amber-200 rounded-lg text-amber-950 text-xs space-y-1.5">
+              <div className="flex items-center gap-1.5 font-bold text-amber-900">
+                <AlertTriangle className="w-4 h-4 text-amber-700 shrink-0" />
+                <span>त्रुटि सुधार / गलत डेटा संशोधन सुविधा:</span>
               </div>
+              <p className="text-[11px] leading-relaxed">
+                यदि अधिकारी द्वारा गलत आंकड़े भरे गए हैं, तो आप इस रिपोर्ट को अनलॉक कर सकते हैं। अनलॉक होने के बाद अधिकारी अपनी रिपोर्ट में त्रुटि सुधार कर पुनः प्रेषित कर सकेंगे।
+              </p>
+            </div>
 
-              <div>
-                <label className="block font-semibold text-slate-700 mb-1">
-                  अंचल कार्यालय की समीक्षा टिप्पणी / फीडबैक (CO Remarks):
-                </label>
-                <textarea
-                  rows={3}
-                  value={coFeedback}
-                  onChange={(e) => setCoFeedback(e.target.value)}
-                  placeholder="उदा. रिपोर्ट की जांच कर ली गई है, सभी आंकड़े संतोषजनक हैं..."
-                  className="w-full p-2.5 bg-slate-50 border rounded-lg text-xs"
-                />
-              </div>
+            <div>
+              <label className="block font-semibold text-slate-700 text-xs mb-1">
+                अनलॉक करने व संशोधन का कारण (Remarks / Correction Reason): <span className="text-red-500">*</span>
+              </label>
+              <textarea
+                rows={3}
+                value={unlockReasonText}
+                onChange={(e) => setUnlockReasonText(e.target.value)}
+                placeholder="उदा. भाग 4 में अनुवाद पृष्ठों की संख्या में त्रुटि है, कृपया सही संख्या भरकर पुनः प्रेषित करें..."
+                className="w-full p-2.5 bg-slate-50 border border-slate-300 rounded-lg text-xs outline-none focus:ring-2 focus:ring-amber-500"
+              />
             </div>
 
             <div className="pt-3 border-t flex items-center justify-end gap-2">
               <button
-                onClick={() => setReviewModalReport(null)}
-                className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-xs font-semibold"
+                onClick={() => {
+                  setUnlockModalReport(null);
+                  setUnlockReasonText('');
+                }}
+                className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-xs font-semibold cursor-pointer"
               >
                 रद्द करें
               </button>
               <button
-                onClick={() => handleApprove(reviewModalReport)}
-                className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-bold flex items-center gap-1.5"
+                onClick={handleConfirmUnlock}
+                className="px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white rounded-lg text-xs font-bold inline-flex items-center gap-1.5 shadow-sm transition cursor-pointer"
               >
-                <CheckCircle2 className="w-4 h-4" />
-                <span>रिपोर्ट स्वीकृत करें (Approve Report)</span>
+                <Unlock className="w-3.5 h-3.5" />
+                <span>रिपोर्ट अनलॉक करें</span>
               </button>
             </div>
           </div>

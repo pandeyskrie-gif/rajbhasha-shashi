@@ -189,7 +189,14 @@ export interface SignedPdfRecord {
 
 export type UserRole = 'officer' | 'co' | 'ho' | 'admin';
 
-export type ReportStatus = 'ड्राफ्ट (Draft)' | 'अंचल को प्रस्तुत (Submitted to CO)' | 'अंचल द्वारा स्वीकृत (Approved by CO)' | 'प्रधान कार्यालय को प्रेषित (Forwarded to HO)';
+export type ReportStatus = 
+  | 'ड्राफ्ट (Draft)' 
+  | 'अंचल को प्रस्तुत (Submitted to CO)' 
+  | 'अंचल द्वारा स्वीकृत (Approved by CO)' 
+  | 'अंचल द्वारा स्वीकृत एवं लॉक (Approved & Locked by CO)'
+  | 'प्रधान कार्यालय को प्रेषित (Forwarded to HO)'
+  | 'प्रधान कार्यालय द्वारा स्वीकृत एवं लॉक (Approved by HO & Locked)'
+  | 'संशोधन हेतु वापस / अनलॉक (Unlocked for Correction)';
 
 export interface QuarterlyReport {
   id: string;
@@ -241,6 +248,22 @@ export interface QuarterlyReport {
   submittedToCOAt?: string;
   approvedByCOAt?: string;
   coFeedback?: string;
+  coReviewRemarks?: string;
+
+  // Circle Office Locking fields (Requested by user: CO can lock & unlock subordinate RO reports)
+  isLockedByCO?: boolean;
+  lockedByCOAt?: string;
+
+  // Head Office Review & Locking fields
+  approvedByHOAt?: string;
+  isLockedByHO?: boolean;
+  hoReviewRemarks?: string;
+
+  // Unlocking audit fields (Requested by user: Unlock for correction by CO or HO)
+  unlockedAt?: string;
+  unlockedByRole?: UserRole;
+  unlockedByOfficerName?: string;
+  unlockReason?: string;
 
   // User-requested Authentic Signed PDF (OL & Head of Office Signatures) - strictly HO-viewable
   signedPdf?: SignedPdfRecord | null;

@@ -246,11 +246,47 @@ export default function App() {
     setReports((prev) =>
       prev.map((r) => {
         if (r.id === reportId) {
+          const isHOApproved = status.includes('प्रधान कार्यालय द्वारा स्वीकृत') || status.includes('Locked by HO') || status === 'प्रधान कार्यालय द्वारा स्वीकृत एवं लॉक (Approved by HO & Locked)';
+          const isCOLocked = status.includes('अंचल द्वारा स्वीकृत एवं लॉक');
+          const isUnlocking = status.includes('अनलॉक') || status.includes('Unlocked') || status === 'ड्राफ्ट (Draft)';
+
           return {
             ...r,
             status,
-            coFeedback: feedback || r.coFeedback,
-            approvedByCOAt: status.includes('स्वीकृत') ? new Date().toISOString() : r.approvedByCOAt,
+            coFeedback: !isHOApproved && !isUnlocking ? (feedback || r.coFeedback) : r.coFeedback,
+            hoReviewRemarks: isHOApproved ? (feedback || r.hoReviewRemarks) : r.hoReviewRemarks,
+            approvedByCOAt: status.includes('स्वीकृत') ? (r.approvedByCOAt || new Date().toISOString()) : r.approvedByCOAt,
+            approvedByHOAt: isHOApproved ? new Date().toISOString() : (isUnlocking ? undefined : r.approvedByHOAt),
+            isLockedByHO: isUnlocking ? false : (isHOApproved ? true : r.isLockedByHO),
+            isLockedByCO: isUnlocking ? false : (isCOLocked ? true : r.isLockedByCO),
+            lockedByCOAt: isCOLocked ? new Date().toISOString() : (isUnlocking ? undefined : r.lockedByCOAt),
+            unlockedAt: isUnlocking ? new Date().toISOString() : r.unlockedAt,
+            unlockedByRole: isUnlocking ? (currentUser?.role || 'co') : r.unlockedByRole,
+            unlockedByOfficerName: isUnlocking ? (currentUser?.name || 'अधिकृत अधिकारी') : r.unlockedByOfficerName,
+            unlockReason: isUnlocking ? (feedback || 'डेटा संशोधन हेतु रिपोर्ट अनलॉक की गई।') : r.unlockReason,
+            updatedAt: new Date().toISOString(),
+          };
+        }
+        return r;
+      })
+    );
+  };
+
+  const handleUnlockReport = (reportId: string, reason: string) => {
+    const role = currentUser?.role || 'co';
+    const officerName = currentUser?.name || (role === 'ho' ? 'प्रधान कार्यालय प्रशासक' : 'अंचल राजभाषा अधिकारी');
+    setReports((prev) =>
+      prev.map((r) => {
+        if (r.id === reportId) {
+          return {
+            ...r,
+            status: 'संशोधन हेतु वापस / अनलॉक (Unlocked for Correction)',
+            isLockedByHO: false,
+            isLockedByCO: false,
+            unlockedAt: new Date().toISOString(),
+            unlockedByRole: role,
+            unlockedByOfficerName: officerName,
+            unlockReason: reason || 'डेटा सुधार एवं संशोधन हेतु रिपोर्ट अनलॉक की गई।',
             updatedAt: new Date().toISOString(),
           };
         }
@@ -439,6 +475,7 @@ export default function App() {
             reports={reports}
             selectedQuarter={selectedQuarter}
             onUpdateReportStatus={handleUpdateReportStatus}
+            onUnlockReport={handleUnlockReport}
             onViewPrintable={(rep) => setViewingPrintableReport(rep)}
             currentUser={currentUser}
             onEditOfficerReport={(off) => {
@@ -464,6 +501,7 @@ export default function App() {
             transferHistory={transferHistory}
             onExecuteTransfer={handleExecuteTransfer}
             onSaveReport={handleSaveReport}
+            onUnlockReport={handleUnlockReport}
           />
         )}
 

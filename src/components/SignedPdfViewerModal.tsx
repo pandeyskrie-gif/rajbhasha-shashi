@@ -193,7 +193,24 @@ export const SignedPdfViewerModal: React.FC<Props> = ({
         {/* HO Verification Controls (Exclusively for Head Office) */}
         {canVerify && onVerify && (
           <div className="bg-slate-50 border-t border-slate-200 p-4 sm:px-6">
-            {!isVerifying ? (
+            {record.status === 'प्र.का. द्वारा सत्यापित' ? (
+              <div className="flex flex-wrap items-center justify-between gap-3 text-xs">
+                <div className="flex items-center gap-2 text-emerald-900 font-bold">
+                  <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                  <span>
+                    🔒 यह हस्ताक्षरित रिपोर्ट प्रधान कार्यालय द्वारा पहले ही सत्यापित एवं अंतिम रूप से स्वीकृत की जा चुकी है।
+                    {record.verifiedByHOAt && (
+                      <span className="font-normal text-slate-600 ml-1">
+                        (सत्यापन तिथि: {new Date(record.verifiedByHOAt).toLocaleString('hi-IN')})
+                      </span>
+                    )}
+                  </span>
+                </div>
+                <span className="px-2.5 py-1 bg-emerald-100 text-emerald-900 rounded font-bold text-[11px] border border-emerald-300">
+                  सत्यापित एवं मान्य
+                </span>
+              </div>
+            ) : !isVerifying ? (
               <div className="flex flex-wrap items-center justify-between gap-3">
                 <div className="flex items-center gap-2 text-xs text-slate-700">
                   <ShieldCheck className="w-4 h-4 text-blue-700 shrink-0" />

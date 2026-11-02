@@ -42,6 +42,7 @@ interface Props {
   transferHistory: TransferRecord[];
   onExecuteTransfer: (record: TransferRecord) => void;
   onSaveReport?: (report: QuarterlyReport) => void;
+  onUnlockReport?: (reportId: string, reason: string) => void;
 }
 
 export const HeadOfficePortal: React.FC<Props> = ({
@@ -55,6 +56,7 @@ export const HeadOfficePortal: React.FC<Props> = ({
   transferHistory,
   onExecuteTransfer,
   onSaveReport,
+  onUnlockReport,
 }) => {
   const [activeHoTab, setActiveHoTab] = useState<'dashboard' | 'transfer' | 'translation' | 'visits' | 'publications_tolic' | 'signed_pdfs'>('dashboard');
   const [searchTerm, setSearchTerm] = useState('');
@@ -125,6 +127,7 @@ export const HeadOfficePortal: React.FC<Props> = ({
     remarks: string
   ) => {
     if (!selectedSignedReport || !selectedSignedReport.signedPdf) return;
+    const isVerified = status === 'प्र.का. द्वारा सत्यापित';
     const updatedRecord: SignedPdfRecord = {
       ...selectedSignedReport.signedPdf,
       status,
@@ -135,6 +138,10 @@ export const HeadOfficePortal: React.FC<Props> = ({
     const updatedReport: QuarterlyReport = {
       ...selectedSignedReport,
       signedPdf: updatedRecord,
+      status: isVerified ? 'प्रधान कार्यालय द्वारा स्वीकृत एवं लॉक (Approved by HO & Locked)' : selectedSignedReport.status,
+      isLockedByHO: isVerified ? true : selectedSignedReport.isLockedByHO,
+      approvedByHOAt: isVerified ? new Date().toISOString() : selectedSignedReport.approvedByHOAt,
+      hoReviewRemarks: isVerified ? (remarks || selectedSignedReport.hoReviewRemarks) : selectedSignedReport.hoReviewRemarks,
       updatedAt: new Date().toISOString(),
     };
     if (onSaveReport) {
@@ -162,6 +169,10 @@ export const HeadOfficePortal: React.FC<Props> = ({
     );
     const visits = cReports.reduce((s, r) => s + (r.branchVisits?.length || 0), 0);
     const submittedCount = cReports.filter((r) => r.status !== 'ड्राफ्ट (Draft)').length;
+    const lockedCount = cReports.filter(
+      (r) => r.isLockedByHO || r.status === 'प्रधान कार्यालय द्वारा स्वीकृत एवं लॉक (Approved by HO & Locked)'
+    ).length;
+    const isFullyLocked = cOfficers.length > 0 && lockedCount === cOfficers.length;
 
     return {
       ...c,
@@ -171,6 +182,8 @@ export const HeadOfficePortal: React.FC<Props> = ({
       receivedTrans,
       doneTrans,
       visits,
+      lockedCount,
+      isFullyLocked,
       isFullySubmitted: cOfficers.length > 0 && submittedCount === cOfficers.length,
     };
   });
@@ -482,17 +495,26 @@ export const HeadOfficePortal: React.FC<Props> = ({
                       <td className="p-3 text-center font-mono font-bold text-slate-600">{c.code}</td>
                       <td className="p-3 text-center font-bold">{c.officersCount}</td>
                       <td className="p-3 text-center">
-                        <span
-                          className={`inline-block px-2.5 py-0.5 rounded-full text-[11px] font-bold ${
-                            c.isFullySubmitted
-                              ? 'bg-emerald-100 text-emerald-800'
-                              : c.submittedReports > 0
-                              ? 'bg-blue-100 text-blue-800'
-                              : 'bg-amber-100 text-amber-800'
-                          }`}
-                        >
-                          {c.submittedReports} / {c.officersCount}
-                        </span>
+                        <div className="flex flex-col items-center gap-1">
+                          <span
+                            className={`inline-block px-2.5 py-0.5 rounded-full text-[11px] font-bold ${
+                              c.isFullyLocked
+                                ? 'bg-purple-100 text-purple-900 border border-purple-300'
+                                : c.isFullySubmitted
+                                ? 'bg-emerald-100 text-emerald-800'
+                                : c.submittedReports > 0
+                                ? 'bg-blue-100 text-blue-800'
+                                : 'bg-amber-100 text-amber-800'
+                            }`}
+                          >
+                            {c.isFullyLocked ? '🔒 पूर्णतः लॉक' : `${c.submittedReports} / ${c.officersCount}`}
+                          </span>
+                          {c.lockedCount > 0 && !c.isFullyLocked && (
+                            <span className="text-[10px] text-purple-700 font-mono font-bold">
+                              {c.lockedCount} लॉक
+                            </span>
+                          )}
+                        </div>
                       </td>
                       <td className="p-3">
                         <div className="font-bold text-indigo-900">
@@ -515,9 +537,14 @@ export const HeadOfficePortal: React.FC<Props> = ({
                       <td className="p-3 text-center">
                         <button
                           onClick={() => onSelectCircleFromHO(c.code)}
-                          className="px-2.5 py-1 bg-blue-50 hover:bg-blue-100 text-blue-800 rounded font-bold text-[11px] inline-flex items-center gap-1 cursor-pointer"
+                          className={`px-2.5 py-1 rounded font-bold text-[11px] inline-flex items-center gap-1 cursor-pointer transition ${
+                            c.isFullyLocked
+                              ? 'bg-purple-50 hover:bg-purple-100 text-purple-900 border border-purple-200'
+                              : 'bg-blue-50 hover:bg-blue-100 text-blue-800'
+                          }`}
                         >
-                          <span>अंचल समीक्षा खोलें</span>
+                          {c.isFullyLocked ? <Lock className="w-3 h-3 text-purple-700" /> : null}
+                          <span>{c.isFullyLocked ? 'समीक्षा (🔒 लॉक)' : 'अंचल समीक्षा खोलें'}</span>
                           <span className="text-xs">→</span>
                         </button>
                       </td>

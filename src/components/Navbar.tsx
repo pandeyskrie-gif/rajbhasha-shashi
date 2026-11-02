@@ -371,8 +371,40 @@ export const Navbar: React.FC<Props> = ({
               </div>
             )}
 
-            {/* If logged in as Head Office or Admin: Full Multi-Level Navigation */}
-            {isHO && (
+            {/* If logged in as Head Office: Exclusively HO Dashboard and Circle Review Desk (No Officer Entry Link) */}
+            {currentUser?.role === 'ho' ? (
+              <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap">
+                <span className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider mr-1 hidden sm:inline">
+                  HO कार्यक्षेत्र:
+                </span>
+
+                <button
+                  onClick={() => setActiveRole('ho')}
+                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition cursor-pointer whitespace-nowrap ${
+                    activeRole === 'ho'
+                      ? 'bg-sky-700 text-white shadow-xs font-bold'
+                      : 'text-slate-700 hover:bg-slate-200/80 bg-white border border-slate-300'
+                  }`}
+                  title="अखिल भारतीय अंचल समेकन, समीक्षा, स्थानांतरण एवं हस्ताक्षरित रिपोर्ट सत्यापन"
+                >
+                  <ShieldCheck className="w-3.5 h-3.5" />
+                  <span>1. प्रधान कार्यालय डैशबोर्ड (Head Office - HO)</span>
+                </button>
+
+                <button
+                  onClick={() => setActiveRole('co')}
+                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition cursor-pointer whitespace-nowrap ${
+                    activeRole === 'co'
+                      ? 'bg-sky-700 text-white shadow-xs font-bold'
+                      : 'text-slate-700 hover:bg-slate-200/80 bg-white border border-slate-300'
+                  }`}
+                  title="अंचल-वार रिपोर्ट समीक्षा एवं अनुमोदन डेस्क (के केवल समीक्षा व लॉक/अनलॉक)"
+                >
+                  <Building2 className="w-3.5 h-3.5" />
+                  <span>2. अंचल कार्यालय समीक्षा डेस्क (Circle Review)</span>
+                </button>
+              </div>
+            ) : isHO && (
               <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap">
                 <span className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider mr-1 hidden sm:inline">
                   कार्य स्तर (Level):
