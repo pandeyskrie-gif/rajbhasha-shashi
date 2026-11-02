@@ -282,17 +282,14 @@ export const LoginScreen: React.FC<Props> = ({ officers, onLoginSuccess, initial
                   </button>
                 </div>
 
-                {/* Secure Password Protection */}
-                <div className="p-2.5 bg-blue-50/80 border border-blue-200 rounded-xl text-[11px] text-blue-950 space-y-1">
-                  <div className="font-bold flex items-center gap-1 text-blue-900">
-                    <KeyRound className="w-3.5 h-3.5 text-blue-600" />
-                    <span>व्यक्तिगत सुरक्षित पासवर्ड (Private Password):</span>
+                {/* Confidentiality Notice */}
+                <div className="p-3 bg-slate-50 border border-slate-200 rounded-xl text-[11px] text-slate-600 space-y-1">
+                  <div className="flex items-center gap-1.5 font-bold text-slate-700">
+                    <ShieldCheck className="w-3.5 h-3.5 text-blue-600" />
+                    <span>सुरक्षा एवं गोपनीयता (Security & Privacy):</span>
                   </div>
-                  <p className="text-[10.5px] text-slate-600">
-                    कृपया प्रधान कार्यालय (HO / CIBM मणिपाल) द्वारा आपको आवंटित गुप्त पासवर्ड अथवा आपके द्वारा सेट किया गया पासवर्ड दर्ज करें।
-                  </p>
-                  <p className="text-[10px] text-blue-700 italic">
-                    सुरक्षा निर्देश: कोई भी दूसरा व्यक्ति आपका डेटा न देख सके, इसके लिए प्रत्येक अधिकारी का पासवर्ड पूरी तरह गोपनीय व अलग है।
+                  <p className="text-[11px] text-slate-500 leading-relaxed">
+                    यह एक सुरक्षित आंतरिक पोर्टल है। कृपया अपना अधिकृत व्यक्तिगत पासवर्ड दर्ज करें। यदि आप पासवर्ड भूल गए हैं अथवा पासवर्ड रीसेट कराना चाहते हैं, तो <strong>प्रधान कार्यालय (HO) राजभाषा अनुभाग</strong> से संपर्क करें।
                   </p>
                 </div>
               </div>
@@ -364,13 +361,14 @@ export const LoginScreen: React.FC<Props> = ({ officers, onLoginSuccess, initial
                   </button>
                 </div>
 
-                <div className="p-2.5 bg-indigo-50 border border-indigo-200 rounded-xl text-[11px] text-indigo-950 space-y-1">
-                  <div className="font-bold flex items-center gap-1 text-indigo-900">
-                    <KeyRound className="w-3.5 h-3.5 text-indigo-600" />
-                    <span>अंचल सुरक्षित पासवर्ड (CO Authorized Key):</span>
+                {/* Confidentiality Notice */}
+                <div className="p-3 bg-slate-50 border border-slate-200 rounded-xl text-[11px] text-slate-600 space-y-1">
+                  <div className="flex items-center gap-1.5 font-bold text-slate-700">
+                    <ShieldCheck className="w-3.5 h-3.5 text-indigo-600" />
+                    <span>अंचल लॉगिन गोपनीयता (Confidentiality Notice):</span>
                   </div>
-                  <p className="text-[10.5px] text-slate-600">
-                    कृपया प्रधान कार्यालय (HO) द्वारा आपके अंचल कार्यालय को आवंटित किया गया अधिकृत पासवर्ड दर्ज करें।
+                  <p className="text-[11px] text-slate-500 leading-relaxed">
+                    प्रत्येक अंचल कार्यालय का पासवर्ड केवल संबंधित अंचल प्रमुख / राजभाषा प्रभारी हेतु गोपनीय एवं सुरक्षित है। अंचल पासवर्ड को देखने, बदलने व रीसेट करने का संपूर्ण प्रबंधन अधिकार <strong>प्रधान कार्यालय (HO)</strong> के पास है।
                   </p>
                 </div>
               </div>

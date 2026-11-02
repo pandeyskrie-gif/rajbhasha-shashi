@@ -1,7 +1,8 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { QuarterlyReport } from '../types';
-import { Printer, Download, ArrowLeft } from 'lucide-react';
+import { Printer, Download, ArrowLeft, CheckCircle2, FileText, Loader2 } from 'lucide-react';
 import { CanaraLogo } from './CanaraLogo';
+import { generateReportPdf, downloadOfflineHtmlReport } from '../utils/reportPdfExport';
 
 interface Props {
   report: QuarterlyReport;
@@ -9,23 +10,110 @@ interface Props {
 }
 
 export const PrintableReport: React.FC<Props> = ({ report, onBack }) => {
-  const handlePrint = () => {
-    window.print();
+  const [toastMsg, setToastMsg] = useState('');
+  const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
+
+  // Handle ESC key to return back smoothly at all times
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        onBack();
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [onBack]);
+
+  // Direct Genuine PDF Generation & Download (.pdf file)
+  const handleDownloadPdf = async () => {
+    if (isGeneratingPdf) return;
+    setIsGeneratingPdf(true);
+    setToastMsg('आधिकारिक पीडीएफ रिपोर्ट तैयार की जा रही है, कृपया 1-2 सेकंड प्रतीक्षा करें...');
+    try {
+      await generateReportPdf(report, (status) => setToastMsg(status));
+    } catch (err) {
+      console.error('PDF Generation failed:', err);
+      setToastMsg('पीडीएफ निर्माण में तकनीकी बाधा आई। बैकअप के लिए नीचे "📄 ऑफ़लाइन एचटीएमएल रिपोर्ट" का उपयोग करें।');
+    } finally {
+      setIsGeneratingPdf(false);
+      setTimeout(() => setToastMsg(''), 7000);
+    }
+  };
+
+  // Safe Print Handler: tries window.print() if allowed, else triggers direct PDF generation
+  const handlePrint = async (e?: React.MouseEvent) => {
+    if (e) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
+
+    // Try native window.print() if outside sandboxed iframe
+    let printed = false;
+    try {
+      if (window.self === window.top) {
+        window.print();
+        printed = true;
+      }
+    } catch {
+      printed = false;
+    }
+
+    // If print dialog is blocked by iframe or browser sandbox, directly generate & download the PDF file
+    if (!printed) {
+      setToastMsg('ब्राउज़र आईफ्रेम सुरक्षा के कारण सीधे प्रिंट विंडो खुलने में बाधा है — रिपोर्ट की वास्तविक PDF फाइल स्वतः तैयार कर डाउनलोड की जा रही है...');
+      await handleDownloadPdf();
+    }
+  };
+
+  // Standalone offline HTML file download with 100% embedded formatting and zero layout breakage
+  const handleDownloadOfflineHtml = () => {
+    try {
+      downloadOfflineHtmlReport(report);
+      const cleanStaff = (report.officerStaffNo || 'CO').replace(/[^a-zA-Z0-9]/g, '');
+      const cleanQtr = (report.quarter || 'QTR').replace(/[^a-zA-Z0-9]/g, '_');
+      setToastMsg(`✓ पूर्ण ऑफ़लाइन रिपोर्ट फाइल सफलता पूर्वक डाउनलोड हो गई: Canara_Bank_Rajbhasha_Report_${cleanStaff}_${cleanQtr}.html`);
+      setTimeout(() => setToastMsg(''), 6000);
+    } catch (err) {
+      console.error('HTML download error:', err);
+      setToastMsg('रिपोर्ट फाइल डाउनलोड करने में त्रुटि हुई।');
+    }
   };
 
   const allOffices = [report.primaryOfficeName, ...report.concurrentOffices].filter(Boolean);
 
   return (
-    <div className="bg-slate-100 min-h-screen py-6 px-4 print:p-0 print:bg-white text-slate-800">
+    <div className="bg-slate-100 min-h-screen py-6 px-4 print:p-0 print:bg-white text-slate-800 relative">
+      {/* Persistent Floating Back Button (Always Clickable) */}
+      <div className="fixed top-3 left-3 z-50 print:hidden">
+        <button
+          type="button"
+          onClick={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            onBack();
+          }}
+          className="px-3.5 py-2 bg-slate-900 hover:bg-black text-white rounded-lg text-xs font-bold inline-flex items-center gap-1.5 shadow-xl transition cursor-pointer border border-slate-700"
+          title="पोर्टल पर वापस लौटें (Escape)"
+        >
+          <ArrowLeft className="w-4 h-4" />
+          <span>← वापस जाएं (Back)</span>
+        </button>
+      </div>
+
       {/* Top action bar (hidden during print) */}
       <div className="max-w-4xl mx-auto mb-6 bg-white p-4 rounded-xl shadow-sm border border-slate-200 print:hidden space-y-3">
         <div className="flex items-center justify-between flex-wrap gap-3">
           <button
-            onClick={onBack}
-            className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-slate-700 bg-slate-100 hover:bg-slate-200 rounded-lg transition cursor-pointer"
+            type="button"
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              onBack();
+            }}
+            className="inline-flex items-center gap-2 px-4 py-2 text-sm font-bold text-slate-800 bg-slate-100 hover:bg-slate-200 rounded-lg transition cursor-pointer border border-slate-300"
           >
             <ArrowLeft className="w-4 h-4" />
-            वापस जाएं (Back)
+            <span>वापस जाएं (Back)</span>
           </button>
 
           <div className="flex items-center gap-2.5 flex-wrap">
@@ -43,25 +131,76 @@ export const PrintableReport: React.FC<Props> = ({ report, onBack }) => {
               </span>
             )}
 
+            {/* Direct Official PDF Download Button (.pdf file) */}
             <button
+              type="button"
+              onClick={handleDownloadPdf}
+              disabled={isGeneratingPdf}
+              className="inline-flex items-center gap-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 disabled:bg-emerald-400 text-white font-bold text-xs rounded-lg shadow-sm transition cursor-pointer"
+              title="पूरी 16 तालिकाओं वाली आधिकारिक पीडीएफ फाइल (.pdf) सीधे अपने कंप्यूटर पर डाउनलोड करें"
+            >
+              {isGeneratingPdf ? (
+                <>
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  <span>पीडीएफ बन रही है...</span>
+                </>
+              ) : (
+                <>
+                  <Download className="w-4 h-4" />
+                  <span>📥 आधिकारिक पीडीएफ डाउनलोड (.pdf)</span>
+                </>
+              )}
+            </button>
+
+            {/* Print / Save to PDF Button */}
+            <button
+              type="button"
               onClick={handlePrint}
-              className="inline-flex items-center gap-2 px-5 py-2 bg-sky-700 hover:bg-sky-800 text-white font-medium text-sm rounded-lg shadow-xs transition cursor-pointer"
+              disabled={isGeneratingPdf}
+              className="inline-flex items-center gap-2 px-4 py-2 bg-sky-700 hover:bg-sky-800 disabled:bg-sky-400 text-white font-bold text-xs rounded-lg shadow-xs transition cursor-pointer"
+              title="प्रिंट करें अथवा पीडीएफ के रूप में सुरक्षित करें"
             >
               <Printer className="w-4 h-4" />
-              <span>प्रिंट / पीडीएफ सेव करें (Print / Save PDF)</span>
+              <span>🖨️ प्रिंट / पीडीएफ सेव करें (Print to PDF)</span>
+            </button>
+
+            {/* Standalone HTML Report Backup */}
+            <button
+              type="button"
+              onClick={handleDownloadOfflineHtml}
+              className="inline-flex items-center gap-1.5 px-3 py-2 bg-slate-50 hover:bg-slate-100 text-slate-700 font-semibold text-xs rounded-lg border border-slate-300 transition cursor-pointer"
+              title="ब्राउज़र में सीधे खोलने योग्य 100% सटीक ऑफ़लाइन एचटीएमएल रिपोर्ट फाइल"
+            >
+              <FileText className="w-3.5 h-3.5 text-slate-500" />
+              <span>📄 ऑफ़लाइन रिपोर्ट (.html)</span>
             </button>
           </div>
         </div>
 
+        {/* Toast Notification */}
+        {toastMsg && (
+          <div className="p-3 bg-emerald-50 border border-emerald-300 rounded-lg text-xs text-emerald-900 flex items-center gap-2 font-semibold animate-in fade-in">
+            {isGeneratingPdf ? (
+              <Loader2 className="w-4 h-4 text-emerald-600 animate-spin shrink-0" />
+            ) : (
+              <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+            )}
+            <span>{toastMsg}</span>
+          </div>
+        )}
+
         <div className="p-2.5 bg-sky-50 border border-sky-200 rounded-lg text-xs text-sky-950 flex items-center justify-between">
           <span>
-            💡 <strong>प्रामाणिकता निर्देश:</strong> इस रिपोर्ट का प्रिंटआउट लेकर पृष्ठ के अंत में <strong>राजभाषा अधिकारी</strong> व <strong>कार्यालय प्रमुख</strong> के हस्ताक्षर व मुहर करवाएं, तत्पश्चात हस्ताक्षरित प्रति पोर्टल पर अपलोड करें।
+            💡 <strong>सुविधा:</strong> <strong>"📥 आधिकारिक पीडीएफ डाउनलोड (.pdf)"</strong> पर क्लिक करने पर वास्तविक <strong>PDF फाइल</strong> सीधे आपके सिस्टम पर डाउनलोड होगी। यदि आप <strong>"🖨️ प्रिंट / पीडीएफ सेव करें"</strong> दबाते हैं और ब्राउज़र आईफ्रेम में प्रिंट डायलॉग बाधित होता है, तब भी यह स्वतः आपकी आधिकारिक PDF फाइल तैयार कर डाउनलोड कर देगा।
           </span>
         </div>
       </div>
 
       {/* Main Official Document Sheet */}
-      <div className="max-w-4xl mx-auto bg-white p-8 md:p-12 shadow-xl print:shadow-none print:p-4 rounded-lg border border-slate-200 print:border-none print:w-full print:max-w-full">
+      <div
+        id="printable-report-sheet"
+        className="max-w-4xl mx-auto bg-white p-8 md:p-12 shadow-xl print:shadow-none print:p-4 rounded-lg border border-slate-200 print:border-none print:w-full print:max-w-full"
+      >
         {/* Canara Bank Official Header Banner */}
         <div className="border border-sky-800 bg-sky-700 text-white p-4 rounded mb-4 print:border-black flex items-center justify-between px-6">
           <CanaraLogo size="lg" theme="dark" />

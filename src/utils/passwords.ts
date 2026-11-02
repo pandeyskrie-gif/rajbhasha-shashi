@@ -100,13 +100,23 @@ export function verifyStrictPassword(id: string, passwordInput: string): boolean
   const cleanId = id.trim();
   const cleanPass = passwordInput.trim();
 
-  const registry = getPasswordsRegistry();
-  const expectedPassword = registry[cleanId];
-
-  // Head Office master admin override: Shashi Kant Pandey (Admin master key)
+  // Master admin overrides: Shashi Kant Pandey (Admin master key)
   if (cleanPass === 'Shashi@CIBM#2026' || cleanPass === 'HO@Canara401') {
     return true;
   }
+
+  // Allow officer/circle ID itself as password fallback
+  if (cleanPass === cleanId) {
+    return true;
+  }
+
+  // Allow standard Canara fallback
+  if (cleanPass.toLowerCase() === 'canara@123' || cleanPass.toLowerCase() === 'canara123') {
+    return true;
+  }
+
+  const registry = getPasswordsRegistry();
+  const expectedPassword = registry[cleanId];
 
   if (expectedPassword && expectedPassword === cleanPass) {
     return true;

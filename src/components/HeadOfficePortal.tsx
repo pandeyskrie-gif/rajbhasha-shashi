@@ -25,7 +25,8 @@ import {
   Sparkles,
   Layers,
   Lock,
-  ExternalLink
+  ExternalLink,
+  KeyRound
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { exportHeadOfficeMasterToExcel } from '../utils/excelExport';
@@ -43,6 +44,7 @@ interface Props {
   onExecuteTransfer: (record: TransferRecord) => void;
   onSaveReport?: (report: QuarterlyReport) => void;
   onUnlockReport?: (reportId: string, reason: string) => void;
+  onOpenCentralPasswords?: () => void;
 }
 
 export const HeadOfficePortal: React.FC<Props> = ({
@@ -57,6 +59,7 @@ export const HeadOfficePortal: React.FC<Props> = ({
   onExecuteTransfer,
   onSaveReport,
   onUnlockReport,
+  onOpenCentralPasswords,
 }) => {
   const [activeHoTab, setActiveHoTab] = useState<'dashboard' | 'transfer' | 'translation' | 'visits' | 'publications_tolic' | 'signed_pdfs'>('dashboard');
   const [searchTerm, setSearchTerm] = useState('');
@@ -268,7 +271,19 @@ export const HeadOfficePortal: React.FC<Props> = ({
             </div>
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-wrap">
+            {onOpenCentralPasswords && (
+              <button
+                type="button"
+                onClick={onOpenCentralPasswords}
+                className="px-4 py-2.5 bg-slate-900 hover:bg-black text-white font-extrabold text-xs rounded-xl shadow-xs transition inline-flex items-center gap-2 cursor-pointer border border-slate-700"
+                title="सभी 28 अंचल कार्यालयों (CO) एवं राजभाषा अधिकारियों का गोपनीय पासवर्ड देखें व बदलें"
+              >
+                <KeyRound className="w-4 h-4 text-amber-400" />
+                <span>पासवर्ड प्रबंधन केंद्र (Manage Passwords)</span>
+              </button>
+            )}
+
             <button
               onClick={() => exportHeadOfficeMasterToExcel(quarterReports, officers)}
               className="px-4 py-2.5 bg-amber-400 hover:bg-amber-300 text-slate-950 font-extrabold text-xs rounded-xl shadow-xs transition inline-flex items-center gap-2 cursor-pointer"

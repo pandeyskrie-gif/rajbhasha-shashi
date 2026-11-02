@@ -502,6 +502,7 @@ export default function App() {
             onExecuteTransfer={handleExecuteTransfer}
             onSaveReport={handleSaveReport}
             onUnlockReport={handleUnlockReport}
+            onOpenCentralPasswords={() => setShowCentralPasswordModal(true)}
           />
         )}
 
@@ -652,6 +653,7 @@ export default function App() {
         isOpen={showCentralPasswordModal}
         onClose={() => setShowCentralPasswordModal(false)}
         officers={officers}
+        circleOffices={circleOffices}
       />
 
       {/* Global Footer */}
