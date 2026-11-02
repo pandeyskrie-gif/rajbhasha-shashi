@@ -1,0 +1,44 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Helper to validate document IDs
+    function isValidId(id) {
+      return id is string && id.size() > 0 && id.size() <= 128;
+    }
+
+    // Reports collection: read, create, update
+    match /reports/{reportId} {
+      allow read: if true;
+      allow create, update: if isValidId(reportId);
+      allow delete: if false;
+    }
+
+    // Passwords registry: managed centrally
+    match /passwords/{id} {
+      allow read: if true;
+      allow write: if isValidId(id);
+    }
+
+    // Transfers collection: created and updated by HO
+    match /transfers/{transferId} {
+      allow read: if true;
+      allow write: if isValidId(transferId);
+    }
+
+    // Officers master collection
+    match /officers/{staffNo} {
+      allow read: if true;
+      allow write: if isValidId(staffNo);
+    }
+
+    // Connection test document
+    match /test/{docId} {
+      allow read, write: if true;
+    }
+
+    // Global default-deny catch-all for any other collections
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

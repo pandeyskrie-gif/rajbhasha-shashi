@@ -131,6 +131,10 @@ export const Navbar: React.FC<Props> = ({
               <span className="bg-amber-400/20 text-amber-300 px-2 py-0.5 rounded text-[11px] font-mono border border-amber-400/30">
                 सुरक्षित पोर्टल v2.7
               </span>
+              <span className="inline-flex items-center gap-1 bg-emerald-500/20 text-emerald-300 px-2 py-0.5 rounded text-[11px] font-medium border border-emerald-500/30 shadow-xs">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+                <span>लाइव क्लाउड सिंक सक्रिय</span>
+              </span>
               <span className="text-slate-400 hidden lg:inline">•</span>
               <span className="text-amber-300 text-[11px] font-semibold hidden lg:inline">
                 ✨ Designed & Developed by Shashi Kant Pandey, Senior Manager (OL), CIBM, Manipal

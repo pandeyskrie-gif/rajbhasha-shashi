@@ -1,0 +1,110 @@
+{
+  "entities": {
+    "QuarterlyReport": {
+      "title": "QuarterlyReport",
+      "description": "Canara Bank Rajbhasha quarterly compliance report filled by OL officers and reviewed by CO and HO",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "officerStaffNo": { "type": "string" },
+        "officerName": { "type": "string" },
+        "officerDesignation": { "type": "string" },
+        "primaryOfficeName": { "type": "string" },
+        "circleOfficeCode": { "type": "string" },
+        "circleOfficeName": { "type": "string" },
+        "quarter": { "type": "string" },
+        "financialYear": { "type": "string" },
+        "status": { "type": "string" },
+        "isLockedByCO": { "type": "boolean" },
+        "isLockedByHO": { "type": "boolean" },
+        "subordinateOfficesCount": { "type": "number" },
+        "concurrentOffices": { "type": "array" },
+        "translation": { "type": "object" },
+        "branchVisits": { "type": "array" },
+        "olicMeetings": { "type": "array" },
+        "workshops": { "type": "array" },
+        "regionalReports": { "type": "array" },
+        "str18Reviews": { "type": "array" },
+        "str18Submissions": { "type": "array" },
+        "paricharchas": { "type": "array" },
+        "seminars": { "type": "array" },
+        "representativeMeetings": { "type": "array" },
+        "magazines": { "type": "array" },
+        "houseJournals": { "type": "array" },
+        "tolicMembers": { "type": "array" },
+        "tolicConveners": { "type": "array" },
+        "innovativeWorks": { "type": "array" },
+        "specialAwards": { "type": "array" },
+        "customFields": { "type": "array" },
+        "signedPdf": { "type": "object" },
+        "unlockedHistory": { "type": "array" },
+        "updatedAt": { "type": "string" }
+      },
+      "required": ["id", "officerStaffNo", "quarter", "status"]
+    },
+    "PasswordEntry": {
+      "title": "PasswordEntry",
+      "description": "Encrypted or managed password entry for an officer, circle office, or head office",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "password": { "type": "string" },
+        "updatedAt": { "type": "string" }
+      },
+      "required": ["id", "password"]
+    },
+    "TransferRecord": {
+      "title": "TransferRecord",
+      "description": "Official transfer record executed by Head Office",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "staffNo": { "type": "string" },
+        "officerName": { "type": "string" },
+        "fromOffice": { "type": "string" },
+        "fromCircleCode": { "type": "string" },
+        "fromCircleName": { "type": "string" },
+        "toOffice": { "type": "string" },
+        "toCircleCode": { "type": "string" },
+        "toCircleName": { "type": "string" },
+        "orderNo": { "type": "string" },
+        "transferDate": { "type": "string" },
+        "effectiveDate": { "type": "string" }
+      },
+      "required": ["id", "staffNo", "officerName", "orderNo"]
+    },
+    "OfficerRecord": {
+      "title": "OfficerRecord",
+      "description": "Master record for an Official Language Officer in Canara Bank",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "staffNo": { "type": "string" },
+        "designation": { "type": "string" },
+        "primaryOfficeName": { "type": "string" },
+        "circleOfficeCode": { "type": "string" },
+        "circleOfficeName": { "type": "string" }
+      },
+      "required": ["id", "name", "staffNo"]
+    }
+  },
+  "firestore": {
+    "/reports/{reportId}": {
+      "schema": "QuarterlyReport",
+      "description": "Quarterly reports submitted by officers and reviewed by CO and HO"
+    },
+    "/passwords/{id}": {
+      "schema": "PasswordEntry",
+      "description": "Central password registry for officers and circles"
+    },
+    "/transfers/{transferId}": {
+      "schema": "TransferRecord",
+      "description": "Transfer records issued by Head Office"
+    },
+    "/officers/{staffNo}": {
+      "schema": "OfficerRecord",
+      "description": "Master list of officers"
+    }
+  }
+}

@@ -78,6 +78,8 @@ export function getPasswordForUser(id: string): string {
   return newPass;
 }
 
+import { syncPasswordToFirestore } from '../services/firebase';
+
 /**
  * Updates an officer's password
  */
@@ -88,6 +90,12 @@ export function updatePasswordForUser(id: string, newPassword: string): boolean 
   const registry = getPasswordsRegistry();
   registry[id.trim()] = newPassword.trim();
   savePasswordsRegistry(registry);
+
+  // Sync to real-time cloud Firestore
+  try {
+    syncPasswordToFirestore(id.trim(), newPassword.trim()).catch(() => {});
+  } catch (e) {}
+
   return true;
 }
 

@@ -18,6 +18,16 @@ import { GoogleSheetsModal } from './components/GoogleSheetsModal';
 import { ChangePasswordModal } from './components/ChangePasswordModal';
 import { CentralPasswordModal } from './components/CentralPasswordModal';
 import { initGoogleAuth, subscribeToGoogleAuth } from './services/googleAuth';
+import { 
+  subscribeToReports, 
+  syncReportToFirestore, 
+  subscribeToTransfers, 
+  syncTransferToFirestore, 
+  subscribeToOfficers, 
+  syncOfficerToFirestore, 
+  subscribeToPasswords 
+} from './services/firebase';
+import { getPasswordsRegistry, savePasswordsRegistry } from './utils/passwords';
 
 
 export default function App() {
@@ -137,6 +147,63 @@ export default function App() {
     localStorage.setItem('cb_rajbhasha_reports_clean_v1', JSON.stringify(reports));
   }, [reports]);
 
+  // Real-time Firestore Cloud Database Subscriptions
+  useEffect(() => {
+    // 1. Subscribe to reports from Firestore
+    const unsubReports = subscribeToReports((cloudReports) => {
+      setReports((prev) => {
+        const map = new Map<string, QuarterlyReport>();
+        prev.forEach((r) => map.set(r.id, r));
+        cloudReports.forEach((cr) => {
+          const existing = map.get(cr.id);
+          if (!existing || new Date(cr.updatedAt || 0) >= new Date(existing.updatedAt || 0)) {
+            map.set(cr.id, cr);
+          }
+        });
+        return Array.from(map.values());
+      });
+    });
+
+    // 2. Subscribe to transfers
+    const unsubTransfers = subscribeToTransfers((cloudTransfers) => {
+      setTransferHistory((prev) => {
+        const ids = new Set(prev.map((t) => t.id));
+        const merged = [...prev];
+        cloudTransfers.forEach((ct) => {
+          if (!ids.has(ct.id)) {
+            merged.push(ct);
+            ids.add(ct.id);
+          }
+        });
+        return merged;
+      });
+    });
+
+    // 3. Subscribe to officers
+    const unsubOfficers = subscribeToOfficers((cloudOfficers) => {
+      if (cloudOfficers.length > 0) {
+        setOfficers((prev) => {
+          const map = new Map(prev.map((o) => [o.staffNo, o]));
+          cloudOfficers.forEach((co) => map.set(co.staffNo, co));
+          return Array.from(map.values());
+        });
+      }
+    });
+
+    // 4. Subscribe to passwords
+    const unsubPasswords = subscribeToPasswords((cloudPassRegistry) => {
+      const current = getPasswordsRegistry();
+      savePasswordsRegistry({ ...current, ...cloudPassRegistry });
+    });
+
+    return () => {
+      unsubReports();
+      unsubTransfers();
+      unsubOfficers();
+      unsubPasswords();
+    };
+  }, []);
+
   useEffect(() => {
     initGoogleAuth();
     const unsub = subscribeToGoogleAuth((user, token) => {
@@ -200,8 +267,11 @@ export default function App() {
       })
     );
 
-    // 2. Append to transfer history
+    // 2. Append to transfer history & sync to cloud
     setTransferHistory((prev) => [record, ...prev]);
+    try {
+      syncTransferToFirestore(record).catch(() => {});
+    } catch (e) {}
 
     // 3. If currently logged in as this officer, update session
     if (currentUser && currentUser.staffNo === record.staffNo) {
@@ -225,7 +295,7 @@ export default function App() {
     }
   };
 
-  // Handlers
+  // Handlers with Real-time Firestore Cloud Sync
   const handleSaveReport = (updatedReport: QuarterlyReport) => {
     setReports((prev) => {
       const idx = prev.findIndex((r) => r.id === updatedReport.id);
@@ -236,6 +306,13 @@ export default function App() {
       }
       return [...prev, updatedReport];
     });
+
+    // Real-time Cloud Firestore sync
+    try {
+      syncReportToFirestore(updatedReport).catch((err) => {
+        console.warn('Real-time sync to Firestore:', err);
+      });
+    } catch (e) {}
   };
 
   const handleUpdateReportStatus = (
@@ -243,14 +320,15 @@ export default function App() {
     status: QuarterlyReport['status'],
     feedback?: string
   ) => {
-    setReports((prev) =>
-      prev.map((r) => {
+    setReports((prev) => {
+      let changedReport: QuarterlyReport | null = null;
+      const updatedList = prev.map((r) => {
         if (r.id === reportId) {
           const isHOApproved = status.includes('प्रधान कार्यालय द्वारा स्वीकृत') || status.includes('Locked by HO') || status === 'प्रधान कार्यालय द्वारा स्वीकृत एवं लॉक (Approved by HO & Locked)';
           const isCOLocked = status.includes('अंचल द्वारा स्वीकृत एवं लॉक');
           const isUnlocking = status.includes('अनलॉक') || status.includes('Unlocked') || status === 'ड्राफ्ट (Draft)';
 
-          return {
+          const updated: QuarterlyReport = {
             ...r,
             status,
             coFeedback: !isHOApproved && !isUnlocking ? (feedback || r.coFeedback) : r.coFeedback,
@@ -266,19 +344,30 @@ export default function App() {
             unlockReason: isUnlocking ? (feedback || 'डेटा संशोधन हेतु रिपोर्ट अनलॉक की गई।') : r.unlockReason,
             updatedAt: new Date().toISOString(),
           };
+          changedReport = updated;
+          return updated;
         }
         return r;
-      })
-    );
+      });
+
+      if (changedReport) {
+        try {
+          syncReportToFirestore(changedReport).catch(() => {});
+        } catch (e) {}
+      }
+
+      return updatedList;
+    });
   };
 
   const handleUnlockReport = (reportId: string, reason: string) => {
     const role = currentUser?.role || 'co';
     const officerName = currentUser?.name || (role === 'ho' ? 'प्रधान कार्यालय प्रशासक' : 'अंचल राजभाषा अधिकारी');
-    setReports((prev) =>
-      prev.map((r) => {
+    setReports((prev) => {
+      let changedReport: QuarterlyReport | null = null;
+      const updatedList = prev.map((r) => {
         if (r.id === reportId) {
-          return {
+          const updated: QuarterlyReport = {
             ...r,
             status: 'संशोधन हेतु वापस / अनलॉक (Unlocked for Correction)',
             isLockedByHO: false,
@@ -289,16 +378,29 @@ export default function App() {
             unlockReason: reason || 'डेटा सुधार एवं संशोधन हेतु रिपोर्ट अनलॉक की गई।',
             updatedAt: new Date().toISOString(),
           };
+          changedReport = updated;
+          return updated;
         }
         return r;
-      })
-    );
+      });
+
+      if (changedReport) {
+        try {
+          syncReportToFirestore(changedReport).catch(() => {});
+        } catch (e) {}
+      }
+
+      return updatedList;
+    });
   };
 
   const handleAddOfficer = (newOfficer: Officer) => {
     setOfficers((prev) => [newOfficer, ...prev]);
     setCurrentOfficer(newOfficer);
     setShowAddOfficerModal(false);
+    try {
+      syncOfficerToFirestore(newOfficer).catch(() => {});
+    } catch (e) {}
   };
 
   const handleUpdateOfficer = (updated: Officer) => {
@@ -306,6 +408,9 @@ export default function App() {
     if (currentOfficer?.staffNo === updated.staffNo) {
       setCurrentOfficer(updated);
     }
+    try {
+      syncOfficerToFirestore(updated).catch(() => {});
+    } catch (e) {}
   };
 
   const handleDeleteOfficer = (staffNo: string) => {
